@@ -245,12 +245,10 @@ object DonghuaParser {
             compareBy<ServerGroup> { s ->
                 val lower = s.serverName.lowercase()
                 when {
-                    lower.contains("4k indo") || lower.contains("indo 4k") || lower.contains("indorumble") -> 0
-                    lower.contains("4k") || lower.contains("vip") -> 1
-                    lower.contains("indo") || lower.contains("indonesia") -> 2
-                    lower.contains("ganjing") || lower.contains("gang") -> 3
-                    lower.contains("eng") || lower.contains("english") -> 4
-                    else -> 5
+                    lower.contains("ganjing") || lower.contains("ganjian") || lower.contains("gang") -> 0
+                    lower.contains("indo") || lower.contains("indonesia") -> 1
+                    lower.contains("eng") || lower.contains("english") -> 2
+                    else -> 3
                 }
             }.thenByDescending { it.count }
         )
@@ -289,7 +287,7 @@ object DonghuaParser {
                 qualities["auto"] = rawUrl
             }
         } else if (provider.contains("rumble") || provider.contains("rum")) {
-            embedUrl = if (rawUrl.startsWith("http")) rawUrl else "https://rumble.com/embed/$rawUrl/?pub=4"
+            embedUrl = if (rawUrl.startsWith("http")) rawUrl else "https://rumble.com/embed/$rawUrl/"
         } else if (provider.contains("ganjing") || provider.contains("gang")) {
             embedUrl = if (rawUrl.startsWith("http")) rawUrl else "https://www.ganjingworld.com/embed/$rawUrl"
         } else if (provider == "dailymotion" || (rawUrl.length <= 25 && !rawUrl.startsWith("http"))) {

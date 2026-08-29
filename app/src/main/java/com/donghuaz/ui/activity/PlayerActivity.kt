@@ -440,7 +440,6 @@ class PlayerActivity : AppCompatActivity() {
         val targetPos = initialResumePositionMs
         val startSec = if (targetPos > 1000L) targetPos / 1000.0 else 0.0
 
-        binding.webViewPlayer.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         binding.webViewPlayer.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -450,10 +449,7 @@ class PlayerActivity : AppCompatActivity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             setSupportMultipleWindows(false)
             javaScriptCanOpenWindowsAutomatically = false
-            loadWithOverviewMode = true
-            useWideViewPort = true
-            databaseEnabled = true
-            userAgentString = "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+            userAgentString = "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
         }
 
         binding.webViewPlayer.addJavascriptInterface(object {
@@ -476,29 +472,7 @@ class PlayerActivity : AppCompatActivity() {
             }
         }, "AndroidBridge")
 
-        var customVideoView: View? = null
-        var customVideoCallback: WebChromeClient.CustomViewCallback? = null
-
         binding.webViewPlayer.webChromeClient = object : WebChromeClient() {
-            override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
-                if (customVideoView != null) {
-                    callback?.onCustomViewHidden()
-                    return
-                }
-                customVideoView = view
-                customVideoCallback = callback
-                binding.playerRoot.addView(view, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-                binding.webViewPlayer.visibility = View.GONE
-            }
-
-            override fun onHideCustomView() {
-                if (customVideoView == null) return
-                binding.playerRoot.removeView(customVideoView)
-                customVideoView = null
-                binding.webViewPlayer.visibility = View.VISIBLE
-                customVideoCallback?.onCustomViewHidden()
-            }
-
             override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
                 return false
             }
@@ -509,7 +483,7 @@ class PlayerActivity : AppCompatActivity() {
                 val uri = request?.url ?: return true
                 val url = uri.toString()
 
-                val allowedHosts = listOf("donghuafun.com", "dailymotion.com", "geo.dailymotion.com", "dmcdn.net", "ksrteam.org", "rumble.com", "rumble.cloud", "rmbl.ws", "ganjingworld.com", "ganjing.com")
+                val allowedHosts = listOf("donghuafun.com", "dailymotion.com", "geo.dailymotion.com", "dmcdn.net", "ksrteam.org", "rumble.com", "rumble.cloud", "ganjingworld.com", "ganjing.com")
                 val isHostAllowed = allowedHosts.any { uri.host?.contains(it) == true }
 
                 if (!isHostAllowed || url.startsWith("intent:") || url.startsWith("market:") || url.startsWith("whatsapp:") || url.startsWith("tg:")) {
@@ -545,12 +519,6 @@ class PlayerActivity : AppCompatActivity() {
             assets.open("hls.min.js").bufferedReader().use { it.readText() }
         } catch (_: Exception) { "" }
 
-        val baseUrl = when {
-            embedUrl.contains("rumble.com") -> "https://rumble.com"
-            embedUrl.contains("dailymotion.com") -> "https://geo.dailymotion.com"
-            else -> "https://donghuafun.com"
-        }
-
         val htmlContent = if (embedUrl.contains(".m3u8")) {
             """
             <!DOCTYPE html>
@@ -558,7 +526,6 @@ class PlayerActivity : AppCompatActivity() {
             <head>
                 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
                 <style>
-                    * { margin:0; padding:0; box-sizing:border-box; }
                     body, html { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; }
                     video { width:100%; height:100%; object-fit:contain; }
                 </style>
@@ -615,22 +582,18 @@ class PlayerActivity : AppCompatActivity() {
             <head>
                 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
                 <style>
-                    * { margin:0; padding:0; box-sizing:border-box; }
-                    body, html { width:100%; height:100%; background:#000; overflow:hidden; }
-                    .iframe-wrapper { position:relative; width:100%; height:100%; display:flex; justify-content:center; align-items:center; }
-                    iframe { width:100%; height:100%; border:none; display:block; }
+                    body, html { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; }
+                    iframe { border:none; width:100%; height:100%; display:block; }
                 </style>
             </head>
             <body>
-                <div class="iframe-wrapper">
-                    <iframe src='$embedUrl' allowfullscreen='true' webkitallowfullscreen='true' mozallowfullscreen='true' allow='autoplay; encrypted-media; fullscreen; picture-in-picture'></iframe>
-                </div>
+                <iframe src='$embedUrl' allowfullscreen='true' allow='autoplay; encrypted-media; fullscreen; picture-in-picture'></iframe>
             </body>
             </html>
             """.trimIndent()
         }
 
-        binding.webViewPlayer.loadDataWithBaseURL(baseUrl, htmlContent, "text/html", "UTF-8", null)
+        binding.webViewPlayer.loadDataWithBaseURL("https://donghuafun.com", htmlContent, "text/html", "UTF-8", null)
     }
 
     private fun startProgressSaver() {
