@@ -107,17 +107,6 @@
                 android:textColor="#FC6F01"
                 android:textSize="23sp"
                 android:textStyle="bold" />
-
-            <!-- Bottom Nav Style Settings Button -->
-            <ImageView
-                android:id="@+id/btnNavSettings"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Pengaturan Navigasi"
-                android:padding="6dp"
-                android:src="@drawable/ic_settings"
-                app:tint="@color/text_secondary" />
         </LinearLayout>
     </LinearLayout>
 
@@ -143,19 +132,12 @@
             android:layout_height="match_parent"
             android:background="@drawable/bg_bottom_nav_glass" />
 
-        <!-- Curved Bottom Navigation Notch (CurvedBottomNavigation) -->
-        <com.donghuaz.ui.widget.CurvedNavView
-            android:id="@+id/vNavCurved"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
-
-        <!-- Modern Sliding Indicator Pill (Animasi Indikator Geser / Bubble) -->
+        <!-- Bubble Navigation Indicator Pill (BubbleNavigation) -->
         <View
-            android:id="@+id/vNavSlidingIndicator"
+            android:id="@+id/vNavBubbleIndicator"
             android:layout_width="60dp"
             android:layout_height="match_parent"
-            android:background="@drawable/bg_nav_sliding_pill" />
+            android:background="@drawable/bg_nav_bubble_pill" />
 
         <!-- Crisp Bottom Navigation Bar Overlay -->
         <com.google.android.material.bottomnavigation.BottomNavigationView

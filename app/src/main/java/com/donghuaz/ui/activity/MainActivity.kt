@@ -7,9 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import com.donghuaz.R
-import com.donghuaz.data.local.StorageManager
 import com.donghuaz.databinding.ActivityMainBinding
-import com.donghuaz.ui.dialog.BottomNavSettingsBottomSheet
 import com.donghuaz.ui.fragment.HomeFragment
 import com.donghuaz.ui.fragment.LibraryFragment
 import com.donghuaz.ui.fragment.RankingFragment
@@ -98,22 +96,10 @@ class MainActivity : AppCompatActivity() {
     private var currentNavIndex = 0
 
     private fun setupBottomNav() {
-        val storage = StorageManager.getInstance(this)
-        applyNavStyle(storage.getBottomNavStyle())
-
-        binding.btnNavSettings.setOnClickListener {
-            BottomNavSettingsBottomSheet { newStyle ->
-                applyNavStyle(newStyle)
-            }.show(supportFragmentManager, BottomNavSettingsBottomSheet.TAG)
-        }
+        binding.bottomNav.labelVisibilityMode = com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY_SELECTED
 
         binding.bottomNav.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            val style = StorageManager.getInstance(this).getBottomNavStyle()
-            if (style == StorageManager.NAV_STYLE_CURVED) {
-                moveCurvedIndicator(currentNavIndex, animate = false)
-            } else if (style == StorageManager.NAV_STYLE_SLIDING || style == StorageManager.NAV_STYLE_BUBBLE) {
-                moveSlidingIndicator(currentNavIndex, animate = false)
-            }
+            moveBubbleIndicator(currentNavIndex, animate = false)
         }
 
         binding.bottomNav.setOnItemSelectedListener { item ->
@@ -126,12 +112,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (targetIndex >= 0 && targetIndex != currentNavIndex) {
-                val style = StorageManager.getInstance(this).getBottomNavStyle()
-                when (style) {
-                    StorageManager.NAV_STYLE_CURVED -> moveCurvedIndicator(targetIndex, animate = true)
-                    StorageManager.NAV_STYLE_SLIDING, StorageManager.NAV_STYLE_BUBBLE -> moveSlidingIndicator(targetIndex, animate = true)
-                    else -> bounceActiveIcon(targetIndex)
-                }
+                moveBubbleIndicator(targetIndex, animate = true)
                 currentNavIndex = targetIndex
             }
 
@@ -157,94 +138,41 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun applyNavStyle(style: String) {
-        when (style) {
-            StorageManager.NAV_STYLE_TRADITIONAL -> {
-                binding.vNavSlidingIndicator.visibility = View.GONE
-                binding.vNavCurved.visibility = View.GONE
-                binding.vBottomNavGlassBlur.visibility = View.VISIBLE
-                binding.bottomNav.labelVisibilityMode = com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY_LABELED
-            }
-            StorageManager.NAV_STYLE_SLIDING -> {
-                binding.vNavSlidingIndicator.visibility = View.VISIBLE
-                binding.vNavSlidingIndicator.setBackgroundResource(R.drawable.bg_nav_sliding_pill)
-                binding.vNavCurved.visibility = View.GONE
-                binding.vBottomNavGlassBlur.visibility = View.VISIBLE
-                binding.bottomNav.labelVisibilityMode = com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY_LABELED
-                moveSlidingIndicator(currentNavIndex, animate = false)
-            }
-            StorageManager.NAV_STYLE_CURVED -> {
-                binding.vNavSlidingIndicator.visibility = View.GONE
-                binding.vNavCurved.visibility = View.VISIBLE
-                binding.vBottomNavGlassBlur.visibility = View.GONE
-                binding.bottomNav.labelVisibilityMode = com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY_LABELED
-                moveCurvedIndicator(currentNavIndex, animate = false)
-            }
-            StorageManager.NAV_STYLE_BUBBLE -> {
-                binding.vNavSlidingIndicator.visibility = View.VISIBLE
-                binding.vNavSlidingIndicator.setBackgroundResource(R.drawable.bg_nav_bubble_pill)
-                binding.vNavCurved.visibility = View.GONE
-                binding.vBottomNavGlassBlur.visibility = View.VISIBLE
-                binding.bottomNav.labelVisibilityMode = com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY_SELECTED
-                moveSlidingIndicator(currentNavIndex, animate = false)
-            }
-        }
-    }
-
-    private fun moveSlidingIndicator(index: Int, animate: Boolean) {
+    private fun moveBubbleIndicator(index: Int, animate: Boolean) {
         val navWidth = binding.bottomNav.width.toFloat()
         if (navWidth <= 0f) return
 
         val itemCount = 4
         val tabWidth = navWidth / itemCount
-        val indicatorWidth = binding.vNavSlidingIndicator.width.toFloat().coerceAtLeast(1f)
+        val indicatorWidth = binding.vNavBubbleIndicator.width.toFloat().coerceAtLeast(1f)
         val targetX = (tabWidth * index) + (tabWidth - indicatorWidth) / 2f
 
         if (animate) {
-            binding.vNavSlidingIndicator.animate()
+            binding.vNavBubbleIndicator.animate()
                 .translationX(targetX)
                 .setDuration(350)
-                .setInterpolator(android.view.animation.OvershootInterpolator(1.15f))
+                .setInterpolator(android.view.animation.OvershootInterpolator(1.2f))
                 .start()
 
-            bounceActiveIcon(index)
+            // Dynamic bouncy tactile pop on active bubble tab icon
+            val menuView = binding.bottomNav.getChildAt(0) as? android.view.ViewGroup
+            val itemView = menuView?.getChildAt(index)
+            itemView?.let { view ->
+                view.animate()
+                    .scaleX(1.15f)
+                    .scaleY(1.15f)
+                    .setDuration(160)
+                    .withEndAction {
+                        view.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(160)
+                            .start()
+                    }
+                    .start()
+            }
         } else {
-            binding.vNavSlidingIndicator.translationX = targetX
-        }
-    }
-
-    private fun moveCurvedIndicator(index: Int, animate: Boolean) {
-        val navWidth = binding.bottomNav.width.toFloat()
-        if (navWidth <= 0f) return
-
-        val itemCount = 4
-        val tabWidth = navWidth / itemCount
-        val targetCenterX = (tabWidth * index) + (tabWidth / 2f)
-
-        if (animate) {
-            binding.vNavCurved.animateTo(targetCenterX, 350)
-            bounceActiveIcon(index)
-        } else {
-            binding.vNavCurved.activeCenterX = targetCenterX
-        }
-    }
-
-    private fun bounceActiveIcon(index: Int) {
-        val menuView = binding.bottomNav.getChildAt(0) as? android.view.ViewGroup
-        val itemView = menuView?.getChildAt(index)
-        itemView?.let { view ->
-            view.animate()
-                .scaleX(1.12f)
-                .scaleY(1.12f)
-                .setDuration(150)
-                .withEndAction {
-                    view.animate()
-                        .scaleX(1.0f)
-                        .scaleY(1.0f)
-                        .setDuration(150)
-                        .start()
-                }
-                .start()
+            binding.vNavBubbleIndicator.translationX = targetX
         }
     }
 

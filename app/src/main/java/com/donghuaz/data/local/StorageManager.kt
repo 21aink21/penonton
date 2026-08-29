@@ -113,25 +113,7 @@ class StorageManager(context: Context) {
         }
     }
 
-    // ==========================================
-    // 3. Bottom Navigation Bar Style Setting
-    // ==========================================
-
-    fun getBottomNavStyle(): String {
-        return prefs.getString(KEY_NAV_STYLE, NAV_STYLE_SLIDING) ?: NAV_STYLE_SLIDING
-    }
-
-    fun setBottomNavStyle(style: String) {
-        prefs.edit().putString(KEY_NAV_STYLE, style).apply()
-    }
-
     companion object {
-        const val NAV_STYLE_TRADITIONAL = "traditional"
-        const val NAV_STYLE_SLIDING = "sliding"
-        const val NAV_STYLE_CURVED = "curved"
-        const val NAV_STYLE_BUBBLE = "bubble"
-
-        private const val KEY_NAV_STYLE = "key_bottom_nav_style"
         private const val KEY_HISTORY = "key_watch_history"
         private const val KEY_FAVORITES = "key_favorites"
         private const val KEY_WATCHED_EPS = "key_watched_eps"
