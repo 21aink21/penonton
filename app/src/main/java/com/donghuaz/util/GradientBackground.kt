@@ -6,7 +6,7 @@ import android.view.View
 
 object GradientBackground {
 
-    const val COLOR_BASE = 0xFF121212.toInt()
+    const val COLOR_BASE = 0xFF1A1A1A.toInt()
 
     fun createDrawable(): ColorDrawable {
         return ColorDrawable(COLOR_BASE)
