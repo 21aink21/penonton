@@ -44,6 +44,11 @@ class MainActivity : AppCompatActivity() {
                     30f, 30f, android.graphics.Shader.TileMode.CLAMP
                 )
             )
+            binding.vBottomNavGlassBlur.setRenderEffect(
+                android.graphics.RenderEffect.createBlurEffect(
+                    15f, 15f, android.graphics.Shader.TileMode.CLAMP
+                )
+            )
         }
     }
 

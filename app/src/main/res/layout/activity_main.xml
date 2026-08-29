@@ -110,26 +110,40 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Fragment Container -->
+    <!-- Fragment Container (Scrolls Edge-to-Edge Behind Bottom Nav) -->
     <FrameLayout
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/mainHeader" />
 
-    <!-- Bottom Navigation Bar (100% Transparent Floating Nav) -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNav"
+    <!-- Bottom Navigation Bar with Frosted Glass Backdrop-Filter -->
+    <FrameLayout
+        android:id="@+id/bottomNavContainer"
         android:layout_width="match_parent"
         android:layout_height="64dp"
-        android:background="@android:color/transparent"
-        app:elevation="0dp"
-        app:itemIconTint="@color/nav_item_color"
-        app:itemTextColor="@color/nav_item_color"
-        app:itemRippleColor="@color/primary_variant"
-        app:labelVisibilityMode="labeled"
-        app:menu="@menu/bottom_nav_menu"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- Frosted Glass Layer (Soft Blur Backdrop Filter + Semi-Transparent Glass Body) -->
+        <View
+            android:id="@+id/vBottomNavGlassBlur"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_bottom_nav_glass" />
+
+        <!-- Crisp Bottom Navigation Bar Overlay -->
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNav"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            app:elevation="0dp"
+            app:itemIconTint="@color/nav_item_color"
+            app:itemTextColor="@color/nav_item_color"
+            app:itemRippleColor="@color/primary_variant"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/bottom_nav_menu" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

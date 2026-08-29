@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Top Hairline Glass Highlight -->
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#26FFFFFF" />
         </shape>
     </item>
-    <item android:top="1dp">
+    <!-- Thin Semi-Transparent Frosted Glass Body (Alpha ~45%) -->
+    <item android:top="0.8dp">
         <shape android:shape="rectangle">
-            <solid android:color="#73121212" />
+            <solid android:color="#731A1A1A" />
         </shape>
     </item>
 </layer-list>

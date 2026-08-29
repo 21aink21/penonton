@@ -34,7 +34,9 @@
         android:id="@+id/rvSchedule"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:clipToPadding="false"
         android:padding="6dp"
+        android:paddingBottom="84dp"
         tools:listitem="@layout/item_anime" />
 
     <!-- Empty State -->
