@@ -267,15 +267,12 @@ object DonghuaParser {
 
         val vid = when {
             rawUrl.startsWith("http") -> {
-                val m = Pattern.compile("rumble\\.com/embed/([^/?#]+)").matcher(rawUrl)
+                val m = Pattern.compile("rumble\\.com/embed/([^/]+)").matcher(rawUrl)
                 if (m.find()) m.group(1) else ""
             }
-            rawUrl.length in 4..20 && !rawUrl.contains("/") -> rawUrl
+            rawUrl.length in 5..15 && !rawUrl.contains("/") -> rawUrl
             else -> ""
         }
-
-        val targetEmbedUrl = if (rawUrl.startsWith("http")) rawUrl else if (vid.isNotEmpty()) "https://rumble.com/embed/$vid/" else ""
-        if (targetEmbedUrl.isNotEmpty()) embedUrl = targetEmbedUrl
 
         if (rawUrl.contains("rumble.com/hls-vod/") || (rawUrl.startsWith("http") && (rawUrl.contains(".m3u8") || rawUrl.contains(".mp4")))) {
             m3u8Url = rawUrl
@@ -283,64 +280,8 @@ object DonghuaParser {
             return@withContext Triple(m3u8Url, qualities, rawUrl)
         }
 
-        // Stage 1: Mengurai (Scraping) HTML dari URL Embed Rumble menggunakan Jsoup & membaca tag <script>
-        if (targetEmbedUrl.isNotEmpty()) {
-            try {
-                val htmlReq = Request.Builder()
-                    .url(targetEmbedUrl)
-                    .header("User-Agent", "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
-                    .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                    .build()
-
-                client.newCall(htmlReq).execute().use { res ->
-                    if (res.isSuccessful) {
-                        val htmlContent = res.body?.string() ?: ""
-                        val doc = Jsoup.parse(htmlContent)
-
-                        for (script in doc.select("script")) {
-                            val scriptData = script.data().ifEmpty { script.html() }
-                            if (scriptData.isEmpty()) continue
-
-                            // Pola A: Rumble("play", { ... });
-                            val playMatcher = Pattern.compile("Rumble\\s*\\(\\s*[\"']play[\"']\\s*,\\s*(\\{.+?\\})\\s*\\);", Pattern.DOTALL).matcher(scriptData)
-                            if (playMatcher.find()) {
-                                try {
-                                    val playJson = gson.fromJson(playMatcher.group(1), JsonObject::class.java)
-                                    parseRumbleManifestJson(playJson, qualities)?.let { m3u8Url = it }
-                                } catch (_: Exception) {}
-                            }
-
-                            // Pola B: Objek JSON dengan properti "mp4", "hls", atau "tar"
-                            if (m3u8Url == null && (scriptData.contains("\"mp4\"") || scriptData.contains("\"hls\"") || scriptData.contains("\"tar\""))) {
-                                val jsonMatcher = Pattern.compile("(\\{[^{}]*?\"(?:mp4|hls|tar)\"[^{}]*?\\})", Pattern.DOTALL).matcher(scriptData)
-                                while (jsonMatcher.find()) {
-                                    try {
-                                        val obj = gson.fromJson(jsonMatcher.group(1), JsonObject::class.java)
-                                        parseRumbleManifestJson(obj, qualities)?.let { m3u8Url = it }
-                                        if (m3u8Url != null) break
-                                    } catch (_: Exception) {}
-                                }
-                            }
-
-                            // Pola C: Ekstraksi URL langsung .m3u8 atau .mp4 di dalam script
-                            if (m3u8Url == null) {
-                                val urlMatcher = Pattern.compile("https?://[^\\s\"'<>]+\\.(?:m3u8|mp4)[^\\s\"'<>]*").matcher(scriptData)
-                                if (urlMatcher.find()) {
-                                    val directUrl = urlMatcher.group() ?: ""
-                                    if (directUrl.isNotEmpty()) {
-                                        m3u8Url = directUrl
-                                        qualities["auto"] = directUrl
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-
-        // Stage 2: Ekstraksi melalui Manifest Video Endpoint Rumble EmbedJS jika belum ditemukan
-        if (m3u8Url == null && vid.isNotEmpty()) {
+        if (vid.isNotEmpty()) {
+            embedUrl = "https://rumble.com/embed/$vid/"
             val jsUrl = "https://rumble.com/embedJS/u3/?request=video&ver=2&v=$vid"
             try {
                 val req = Request.Builder()
@@ -351,7 +292,59 @@ object DonghuaParser {
                     if (response.isSuccessful) {
                         val body = response.body?.string() ?: ""
                         val jsonObj = gson.fromJson(body, JsonObject::class.java)
-                        parseRumbleManifestJson(jsonObj, qualities)?.let { m3u8Url = it }
+
+                        // 1. Check HLS Master Playlist
+                        val uObj = jsonObj.getAsJsonObject("u")
+                        val hlsObj = uObj?.getAsJsonObject("hls")
+                        val hlsUrl = hlsObj?.get("url")?.asString
+                        if (!hlsUrl.isNullOrEmpty()) {
+                            m3u8Url = hlsUrl
+                            qualities["auto"] = hlsUrl
+                        }
+
+                        // 2. Check quality streams in 'ua' or 'u' (4K, 2K, 1080p, 720p, 480p, etc.)
+                        val uaObj = jsonObj.getAsJsonObject("ua")
+                        val tarObj = uaObj?.getAsJsonObject("tar") ?: uObj?.getAsJsonObject("tar")
+                        if (tarObj != null) {
+                            for (qKey in listOf("2160", "1440", "1080", "720", "480", "360", "240")) {
+                                val qData = tarObj.get(qKey)
+                                val qUrl = when {
+                                    qData?.isJsonObject == true -> qData.asJsonObject.get("url")?.asString
+                                    qData?.isJsonPrimitive == true -> qData.asString
+                                    else -> null
+                                }
+                                if (!qUrl.isNullOrEmpty()) {
+                                    val label = when (qKey) {
+                                        "2160" -> "4K Ultra HD (2160p)"
+                                        "1440" -> "2K QHD (1440p)"
+                                        "1080" -> "Full HD (1080p)"
+                                        "720" -> "HD (720p)"
+                                        "480" -> "SD (480p)"
+                                        "360" -> "Low (360p)"
+                                        else -> "${qKey}p"
+                                    }
+                                    qualities[label] = qUrl
+                                    if (m3u8Url == null) m3u8Url = qUrl
+                                }
+                            }
+                        }
+
+                        // 3. Check MP4 direct streams
+                        val mp4Obj = uaObj?.getAsJsonObject("mp4") ?: uObj?.getAsJsonObject("mp4")
+                        if (mp4Obj != null) {
+                            for (qKey in listOf("1080", "720", "480", "360", "240")) {
+                                val qData = mp4Obj.get(qKey)
+                                val qUrl = when {
+                                    qData?.isJsonObject == true -> qData.asJsonObject.get("url")?.asString
+                                    qData?.isJsonPrimitive == true -> qData.asString
+                                    else -> null
+                                }
+                                if (!qUrl.isNullOrEmpty()) {
+                                    qualities["MP4 ${qKey}p"] = qUrl
+                                    if (m3u8Url == null) m3u8Url = qUrl
+                                }
+                            }
+                        }
                     }
                 }
             } catch (_: Exception) {}
@@ -362,65 +355,6 @@ object DonghuaParser {
         }
 
         Triple(m3u8Url, qualities, embedUrl)
-    }
-
-    private fun parseRumbleManifestJson(jsonObj: JsonObject, qualities: MutableMap<String, String>): String? {
-        var selectedStreamUrl: String? = null
-
-        // 1. Periksa HLS Master Playlist ("u" -> "hls" -> "url")
-        val uObj = jsonObj.getAsJsonObject("u") ?: jsonObj
-        val hlsObj = uObj.getAsJsonObject("hls")
-        val hlsUrl = hlsObj?.get("url")?.asString
-        if (!hlsUrl.isNullOrEmpty()) {
-            selectedStreamUrl = hlsUrl
-            qualities["auto"] = hlsUrl
-        }
-
-        // 2. Periksa varian chunklist resolusi ("ua" / "u" -> "tar" -> 2160, 1440, 1080, 720, dst)
-        val uaObj = jsonObj.getAsJsonObject("ua")
-        val tarObj = uaObj?.getAsJsonObject("tar") ?: uObj.getAsJsonObject("tar")
-        if (tarObj != null) {
-            for (qKey in listOf("2160", "1440", "1080", "720", "480", "360", "240")) {
-                val qData = tarObj.get(qKey)
-                val qUrl = when {
-                    qData?.isJsonObject == true -> qData.asJsonObject.get("url")?.asString
-                    qData?.isJsonPrimitive == true -> qData.asString
-                    else -> null
-                }
-                if (!qUrl.isNullOrEmpty()) {
-                    val label = when (qKey) {
-                        "2160" -> "4K Ultra HD (2160p)"
-                        "1440" -> "2K QHD (1440p)"
-                        "1080" -> "Full HD (1080p)"
-                        "720" -> "HD (720p)"
-                        "480" -> "SD (480p)"
-                        "360" -> "Low (360p)"
-                        else -> "${qKey}p"
-                    }
-                    qualities[label] = qUrl
-                    if (selectedStreamUrl == null) selectedStreamUrl = qUrl
-                }
-            }
-        }
-
-        // 3. Periksa tautan MP4 langsung ("mp4" -> 1080, 720, dst)
-        val mp4Obj = uaObj?.getAsJsonObject("mp4") ?: uObj.getAsJsonObject("mp4")
-        if (mp4Obj != null) {
-            for (qKey in listOf("1080", "720", "480", "360", "240")) {
-                val qData = mp4Obj.get(qKey)
-                val qUrl = when {
-                    qData?.isJsonObject == true -> qData.asJsonObject.get("url")?.asString
-                    qData?.isJsonPrimitive == true -> qData.asString
-                    else -> null
-                }
-                if (!qUrl.isNullOrEmpty()) {
-                    qualities["MP4 ${qKey}p"] = qUrl
-                    if (selectedStreamUrl == null) selectedStreamUrl = qUrl
-                }
-            }
-        }
-
-        return selectedStreamUrl
     }
 
     suspend fun getStream(animeId: Int, sid: Int = 1, nid: Int = 1): StreamResult = withContext(Dispatchers.IO) {
