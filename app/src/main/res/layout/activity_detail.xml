@@ -146,7 +146,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="★"
                                 android:textColor="#F59E0B"
-                                android:textSize="17sp"
+                                android:textSize="18sp"
                                 android:textStyle="bold" />
 
                             <TextView
@@ -156,21 +156,21 @@
                                 android:layout_marginStart="3dp"
                                 android:text="9.8"
                                 android:textColor="#F59E0B"
-                                android:textSize="17sp"
+                                android:textSize="18sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
-                        <!-- Badge Episode Aktif (Chip Merah) -->
+                        <!-- Badge Episode Aktif (Chip Gold Accent) -->
                         <TextView
                             android:id="@+id/tvDetailStatus"
                             android:layout_width="wrap_content"
-                            android:layout_height="28dp"
+                            android:layout_height="30dp"
                             android:layout_marginStart="10dp"
-                            android:background="@drawable/bg_badge_ep"
+                            android:background="@drawable/bg_badge_gold_dark"
                             android:gravity="center"
-                            android:paddingHorizontal="10dp"
-                            android:textColor="#FFFFFF"
-                            android:textSize="13sp"
+                            android:paddingHorizontal="12dp"
+                            android:textColor="#F59E0B"
+                            android:textSize="14sp"
                             android:textStyle="bold"
                             tools:text="EP97" />
 

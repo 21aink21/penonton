@@ -49,18 +49,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textColor="@color/secondary"
+                android:textColor="@color/accent_gold"
                 android:textSize="12sp"
+                android:textStyle="bold"
                 tools:text="Terakhir Ditonton: EP97" />
 
-            <!-- Progress Bar -->
+            <!-- Progress Bar (Gold Accent 6dp) -->
             <ProgressBar
                 android:id="@+id/pbWatchProgress"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="match_parent"
-                android:layout_height="4dp"
+                android:layout_height="6dp"
                 android:layout_marginTop="6dp"
-                android:progressTint="@color/primary"
+                android:progressTint="@color/accent_gold"
+                android:progressBackgroundTint="#4DF59E0B"
                 android:max="100"
                 android:progress="65" />
         </LinearLayout>

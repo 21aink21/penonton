@@ -54,32 +54,38 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_badge_gold"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
                     android:textColor="@color/background"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold"
                     tools:text="🔥 Top #1" />
 
-                <!-- Episode Badge -->
+                <!-- Episode Badge (Gold Accent) -->
                 <TextView
                     android:id="@+id/tvBannerEp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_badge"
-                    android:textColor="@color/primary"
-                    android:textSize="11sp"
+                    android:background="@drawable/bg_badge_gold_dark"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:textColor="@color/accent_gold"
+                    android:textSize="12sp"
                     android:textStyle="bold"
                     tools:text="EP 168" />
 
-                <!-- Rating Badge -->
+                <!-- Rating Badge (Gold Accent) -->
                 <TextView
                     android:id="@+id/tvBannerRating"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_chip"
+                    android:background="@drawable/bg_badge_gold_dark"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
                     android:textColor="@color/accent_gold"
-                    android:textSize="11sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     tools:text="★ 9.5" />
             </LinearLayout>

@@ -39,32 +39,30 @@
             android:alpha="0.85"
             app:tint="@color/text_primary" />
 
-        <!-- Episode badge top-right -->
+        <!-- Episode badge top-right (Enlarged Gold Accent) -->
         <TextView
             android:id="@+id/tvCwEpisode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="top|end"
-            android:layout_margin="6dp"
-            android:background="@drawable/bg_badge"
-            android:paddingHorizontal="5dp"
-            android:paddingVertical="2dp"
-            android:textColor="@color/text_primary"
-            android:textSize="9sp"
+            android:layout_margin="7dp"
+            android:background="@drawable/bg_badge_gold_dark"
+            android:textColor="@color/accent_gold"
+            android:textSize="12sp"
             android:textStyle="bold"
             tools:text="EP 97" />
 
-        <!-- CrimsonNoir Progress Bar -->
+        <!-- Gold Accent Progress Bar (Enlarged 6dp) -->
         <ProgressBar
             android:id="@+id/pbCwProgress"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="3dp"
+            android:layout_height="6dp"
             android:layout_gravity="bottom"
             android:layout_marginBottom="36dp"
             android:max="100"
-            android:progressTint="@color/crimsonnoir_light"
-            android:progressBackgroundTint="@color/crimsonnoir_track" />
+            android:progressTint="@color/accent_gold"
+            android:progressBackgroundTint="#4DF59E0B" />
 
         <!-- Title bottom -->
         <TextView
