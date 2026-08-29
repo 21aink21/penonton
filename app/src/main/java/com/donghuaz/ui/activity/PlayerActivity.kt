@@ -2,6 +2,8 @@ package com.donghuaz.ui.activity
 
 import android.annotation.SuppressLint
 import android.app.PictureInPictureParams
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.media.AudioManager
 import android.net.Uri
@@ -27,6 +29,7 @@ import androidx.media3.common.Player
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.AspectRatioFrameLayout
 import com.donghuaz.R
 import com.donghuaz.data.local.StorageManager
@@ -335,7 +338,7 @@ class PlayerActivity : AppCompatActivity() {
                 binding.playerProgressBar.visibility = View.GONE
 
                 if (!stream.m3u8Url.isNullOrEmpty()) {
-                    playHlsStream(stream.m3u8Url)
+                    playHlsStream(stream.m3u8Url, stream.provider)
                 } else if (!stream.embedUrl.isNullOrEmpty()) {
                     playEmbedStream(stream.embedUrl)
                 } else {
@@ -348,33 +351,48 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    private fun playHlsStream(m3u8Url: String, provider: String = "") {
+    private fun playHlsStream(streamUrl: String, provider: String = "") {
         binding.webViewPlayer.visibility = View.GONE
         binding.playerView.visibility = View.VISIBLE
 
-        val referer = when {
-            m3u8Url.contains("rumble.com") -> "https://rumble.com/"
-            m3u8Url.contains("cdn.rumble.cloud") -> "https://rumble.com/"
-            m3u8Url.contains("doubanio.com") -> "https://movie.douban.com/"
-            m3u8Url.contains("donghuafun.com") -> "https://donghuafun.com/"
-            else -> "https://donghuafun.com/"
+        // Otomatis salin tautan video mentah (.mp4 / .m3u8) ke clipboard
+        try {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Raw Video Stream", streamUrl)
+            clipboard.setPrimaryClip(clip)
+            val streamType = if (streamUrl.contains(".mp4")) "MP4 Mentah" else "4K/HLS Stream"
+            Toast.makeText(this, "Tautan $streamType berhasil disalin & dimuat!", Toast.LENGTH_SHORT).show()
+        } catch (_: Exception) {}
+
+        val requestProperties = mutableMapOf<String, String>()
+        if (!streamUrl.contains("rumble.com") && !streamUrl.contains("rumble.cloud") && !streamUrl.contains("rmbl.ws")) {
+            val referer = when {
+                streamUrl.contains("doubanio.com") -> "https://movie.douban.com/"
+                streamUrl.contains("donghuafun.com") -> "https://donghuafun.com/"
+                else -> "https://donghuafun.com/"
+            }
+            requestProperties["Referer"] = referer
+            requestProperties["Origin"] = referer.trimEnd('/')
         }
 
         val dataSourceFactory = DefaultHttpDataSource.Factory()
             .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-            .setDefaultRequestProperties(mapOf(
-                "Referer" to referer,
-                "Origin" to referer.trimEnd('/')
-            ))
+            .setDefaultRequestProperties(requestProperties)
             .setAllowCrossProtocolRedirects(true)
 
+        val isMp4 = streamUrl.contains(".mp4")
         val mediaItem = MediaItem.Builder()
-            .setUri(Uri.parse(m3u8Url))
-            .setMimeType(MimeTypes.APPLICATION_M3U8)
+            .setUri(Uri.parse(streamUrl))
+            .setMimeType(if (isMp4) MimeTypes.APPLICATION_MP4 else MimeTypes.APPLICATION_M3U8)
             .build()
 
-        val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
-            .createMediaSource(mediaItem)
+        val mediaSource = if (isMp4) {
+            ProgressiveMediaSource.Factory(dataSourceFactory)
+                .createMediaSource(mediaItem)
+        } else {
+            HlsMediaSource.Factory(dataSourceFactory)
+                .createMediaSource(mediaItem)
+        }
 
         hasAppliedResumePosition = false
         val targetPos = initialResumePositionMs
@@ -421,7 +439,7 @@ class PlayerActivity : AppCompatActivity() {
 
                 override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                     binding.playerProgressBar.visibility = View.GONE
-                    playEmbedStream(m3u8Url)
+                    playEmbedStream(streamUrl)
                 }
             })
         }
