@@ -32,7 +32,6 @@ class MainActivity : AppCompatActivity() {
         GradientBackground.apply(this)
         setupFragments()
         setupBottomNav()
-        setupSearch()
         setupLogoStyle()
     }
 
@@ -76,22 +75,18 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.nav_home -> {
                     switchFragment(homeFragment)
-                    binding.searchContainer.visibility = View.VISIBLE
                     true
                 }
                 R.id.nav_schedule -> {
                     switchFragment(scheduleFragment)
-                    binding.searchContainer.visibility = View.GONE
                     true
                 }
                 R.id.nav_ranking -> {
                     switchFragment(rankingFragment)
-                    binding.searchContainer.visibility = View.GONE
                     true
                 }
                 R.id.nav_library -> {
                     switchFragment(libraryFragment)
-                    binding.searchContainer.visibility = View.GONE
                     true
                 }
                 else -> false
@@ -111,35 +106,5 @@ class MainActivity : AppCompatActivity() {
         }
         tx.commit()
         activeFragment = target
-    }
-
-    private fun setupSearch() {
-        binding.etSearch.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                val query = binding.etSearch.text?.toString()?.trim() ?: ""
-                if (query.isNotEmpty()) {
-                    if (activeFragment != homeFragment) {
-                        binding.bottomNav.selectedItemId = R.id.nav_home
-                    }
-                    homeFragment.search(query)
-                }
-                true
-            } else {
-                false
-            }
-        }
-
-        binding.etSearch.addTextChangedListener { text ->
-            val query = text?.toString()?.trim() ?: ""
-            binding.btnClearSearch.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
-            if (query.isEmpty()) {
-                homeFragment.clearSearch()
-            }
-        }
-
-        binding.btnClearSearch.setOnClickListener {
-            binding.etSearch.setText("")
-            homeFragment.clearSearch()
-        }
     }
 }

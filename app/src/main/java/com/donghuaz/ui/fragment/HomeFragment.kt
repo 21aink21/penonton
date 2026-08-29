@@ -60,7 +60,9 @@ class HomeFragment : Fragment() {
     private fun setupRecyclerView() {
         homeAdapter = HomeAdapter(
             onAnimeClick = { openDetail(it) },
-            onBannerClick = { openDetail(it) }
+            onBannerClick = { openDetail(it) },
+            onSearchSubmit = { search(it) },
+            onSearchClear = { clearSearch() }
         )
 
         val glm = GridLayoutManager(requireContext(), 3)
@@ -68,6 +70,7 @@ class HomeFragment : Fragment() {
             override fun getSpanSize(position: Int): Int {
                 return when (homeAdapter.getItemViewType(position)) {
                     HomeAdapter.TYPE_BANNER,
+                    HomeAdapter.TYPE_SEARCH,
                     HomeAdapter.TYPE_HISTORY_HEADER,
                     HomeAdapter.TYPE_CONTINUE,
                     HomeAdapter.TYPE_HEADER,
