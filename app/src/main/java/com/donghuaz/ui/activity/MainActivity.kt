@@ -93,8 +93,27 @@ class MainActivity : AppCompatActivity() {
         activeFragment = homeFragment
     }
 
+    private var currentNavIndex = 0
+
     private fun setupBottomNav() {
+        binding.bottomNav.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            moveSlidingIndicator(currentNavIndex, animate = false)
+        }
+
         binding.bottomNav.setOnItemSelectedListener { item ->
+            val targetIndex = when (item.itemId) {
+                R.id.nav_home -> 0
+                R.id.nav_schedule -> 1
+                R.id.nav_ranking -> 2
+                R.id.nav_library -> 3
+                else -> -1
+            }
+
+            if (targetIndex >= 0 && targetIndex != currentNavIndex) {
+                moveSlidingIndicator(targetIndex, animate = true)
+                currentNavIndex = targetIndex
+            }
+
             when (item.itemId) {
                 R.id.nav_home -> {
                     switchFragment(homeFragment)
@@ -114,6 +133,44 @@ class MainActivity : AppCompatActivity() {
                 }
                 else -> false
             }
+        }
+    }
+
+    private fun moveSlidingIndicator(index: Int, animate: Boolean) {
+        val navWidth = binding.bottomNav.width.toFloat()
+        if (navWidth <= 0f) return
+
+        val itemCount = 4
+        val tabWidth = navWidth / itemCount
+        val indicatorWidth = binding.vNavSlidingIndicator.width.toFloat().coerceAtLeast(1f)
+        val targetX = (tabWidth * index) + (tabWidth - indicatorWidth) / 2f
+
+        if (animate) {
+            binding.vNavSlidingIndicator.animate()
+                .translationX(targetX)
+                .setDuration(350)
+                .setInterpolator(android.view.animation.OvershootInterpolator(1.15f))
+                .start()
+
+            // Subtle bounce pop on active tab icon
+            val menuView = binding.bottomNav.getChildAt(0) as? android.view.ViewGroup
+            val itemView = menuView?.getChildAt(index)
+            itemView?.let { view ->
+                view.animate()
+                    .scaleX(1.12f)
+                    .scaleY(1.12f)
+                    .setDuration(150)
+                    .withEndAction {
+                        view.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(150)
+                            .start()
+                    }
+                    .start()
+            }
+        } else {
+            binding.vNavSlidingIndicator.translationX = targetX
         }
     }
 

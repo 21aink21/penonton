@@ -132,6 +132,13 @@
             android:layout_height="match_parent"
             android:background="@drawable/bg_bottom_nav_glass" />
 
+        <!-- Modern Sliding Indicator Pill (Animasi Indikator Geser) -->
+        <View
+            android:id="@+id/vNavSlidingIndicator"
+            android:layout_width="60dp"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_nav_sliding_pill" />
+
         <!-- Crisp Bottom Navigation Bar Overlay -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNav"

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Top Glowing Gradient Accent Bar (3dp Height, 28dp Width) -->
+    <item
+        android:gravity="top|center_horizontal"
+        android:height="3dp"
+        android:width="28dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="2dp" />
+            <gradient
+                android:startColor="#0055FF"
+                android:endColor="#FC6F01"
+                android:angle="0" />
+        </shape>
+    </item>
+
+    <!-- Translucent Flame Orange Capsule Glow (Alpha ~20%) -->
+    <item
+        android:top="8dp"
+        android:bottom="8dp"
+        android:gravity="center">
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp" />
+            <solid android:color="#2EFF7700" />
+        </shape>
+    </item>
+</layer-list>
