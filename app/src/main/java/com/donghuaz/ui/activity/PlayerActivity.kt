@@ -78,6 +78,17 @@ class PlayerActivity : AppCompatActivity() {
     private var isEmbedPlaying = false
     private var embedStartTimeMs = 0L
 
+    private var initialResumePositionMs = 0L
+    private var hasAppliedResumePosition = false
+
+    private val progressHandler = Handler(Looper.getMainLooper())
+    private val progressRunnable = object : Runnable {
+        override fun run() {
+            saveProgress()
+            progressHandler.postDelayed(this, 2500)
+        }
+    }
+
     private val hudHandler = Handler(Looper.getMainLooper())
     private val hideHudRunnable = Runnable { binding.layoutHud.visibility = View.GONE }
 
@@ -98,6 +109,15 @@ class PlayerActivity : AppCompatActivity() {
         animePoster = intent.getStringExtra("ANIME_POSTER") ?: ""
         currentSid = intent.getIntExtra("SID", 1)
         currentNid = intent.getIntExtra("NID", 1)
+
+        val intentPos = intent.getLongExtra("START_POSITION", -1L)
+        initialResumePositionMs = if (intentPos > 0L) {
+            intentPos
+        } else {
+            storage.getEpisodePosition(animeId, currentNid).takeIf { it > 0L }
+                ?: storage.getLastWatched(animeId)?.takeIf { it.nid == currentNid }?.positionMs
+                ?: 0L
+        }
 
         binding.tvPlayerTitle.text = "$animeTitle - $episodeName"
         binding.btnPlayerBack.setOnClickListener { finish() }
@@ -356,23 +376,33 @@ class PlayerActivity : AppCompatActivity() {
         val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
             .createMediaSource(mediaItem)
 
+        hasAppliedResumePosition = false
+        val targetPos = initialResumePositionMs
+
         exoPlayer = ExoPlayer.Builder(this).build().apply {
             setMediaSource(mediaSource)
-            prepare()
-
-            val lastWatched = storage.getLastWatched(animeId)
-            if (lastWatched != null && lastWatched.nid == currentNid && lastWatched.positionMs > 5000) {
-                seekTo(lastWatched.positionMs)
-                Toast.makeText(this@PlayerActivity, "Melanjutkan dari posisi terakhir", Toast.LENGTH_SHORT).show()
+            if (targetPos > 1000L) {
+                seekTo(targetPos)
             }
-
+            prepare()
             playWhenReady = true
 
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(state: Int) {
                     when (state) {
                         Player.STATE_BUFFERING -> binding.playerProgressBar.visibility = View.VISIBLE
-                        Player.STATE_READY -> binding.playerProgressBar.visibility = View.GONE
+                        Player.STATE_READY -> {
+                            binding.playerProgressBar.visibility = View.GONE
+                            if (!hasAppliedResumePosition && targetPos > 1000L) {
+                                hasAppliedResumePosition = true
+                                if (abs(currentPosition - targetPos) > 2000L) {
+                                    seekTo(targetPos)
+                                }
+                                val mins = targetPos / 60000
+                                val secs = (targetPos % 60000) / 1000
+                                showHud(R.drawable.ic_skip_next, "Melanjutkan dari %02d:%02d".format(mins, secs))
+                            }
+                        }
                         Player.STATE_ENDED -> {
                             binding.playerProgressBar.visibility = View.GONE
                             Toast.makeText(this@PlayerActivity, "Episode selesai", Toast.LENGTH_SHORT).show()
@@ -380,6 +410,15 @@ class PlayerActivity : AppCompatActivity() {
                         else -> {}
                     }
                 }
+
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    if (isPlaying) {
+                        startProgressSaver()
+                    } else {
+                        stopProgressSaver()
+                    }
+                }
+
                 override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                     binding.playerProgressBar.visibility = View.GONE
                     playEmbedStream(m3u8Url)
@@ -398,6 +437,9 @@ class PlayerActivity : AppCompatActivity() {
         isEmbedPlaying = true
         embedStartTimeMs = System.currentTimeMillis()
 
+        val targetPos = initialResumePositionMs
+        val startSec = if (targetPos > 1000L) targetPos / 1000.0 else 0.0
+
         binding.webViewPlayer.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -409,6 +451,26 @@ class PlayerActivity : AppCompatActivity() {
             javaScriptCanOpenWindowsAutomatically = false
             userAgentString = "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
         }
+
+        binding.webViewPlayer.addJavascriptInterface(object {
+            @android.webkit.JavascriptInterface
+            fun onTimeUpdate(currentTimeSec: Float, durationSec: Float) {
+                val posMs = (currentTimeSec * 1000).toLong()
+                val durMs = (durationSec * 1000).toLong()
+                if (posMs > 1000L) {
+                    storage.saveHistory(
+                        animeId = animeId,
+                        title = animeTitle,
+                        poster = animePoster,
+                        episodeName = episodeName,
+                        sid = currentSid,
+                        nid = currentNid,
+                        positionMs = posMs,
+                        durationMs = durMs
+                    )
+                }
+            }
+        }, "AndroidBridge")
 
         binding.webViewPlayer.webChromeClient = object : WebChromeClient() {
             override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
@@ -474,6 +536,14 @@ class PlayerActivity : AppCompatActivity() {
                 <script>
                     var video = document.getElementById('video');
                     var videoSrc = '$embedUrl';
+                    var startSec = $startSec;
+
+                    function applyResume() {
+                        if (startSec > 1 && Math.abs(video.currentTime - startSec) > 2) {
+                            try { video.currentTime = startSec; } catch(e){}
+                        }
+                    }
+
                     if (typeof Hls !== 'undefined' && Hls.isSupported()) {
                         var hls = new Hls({
                             enableWorker: true,
@@ -482,6 +552,7 @@ class PlayerActivity : AppCompatActivity() {
                         hls.loadSource(videoSrc);
                         hls.attachMedia(video);
                         hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                            applyResume();
                             video.play().catch(function(e) {
                                 console.log('Autoplay error:', e);
                             });
@@ -489,9 +560,17 @@ class PlayerActivity : AppCompatActivity() {
                     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                         video.src = videoSrc;
                         video.addEventListener('loadedmetadata', function() {
+                            applyResume();
                             video.play();
                         });
                     }
+
+                    video.addEventListener('canplay', applyResume);
+                    video.addEventListener('timeupdate', function() {
+                        if (window.AndroidBridge && video.currentTime > 1) {
+                            window.AndroidBridge.onTimeUpdate(video.currentTime, video.duration || 0);
+                        }
+                    });
                 </script>
             </body>
             </html>
@@ -517,27 +596,21 @@ class PlayerActivity : AppCompatActivity() {
         binding.webViewPlayer.loadDataWithBaseURL("https://donghuafun.com", htmlContent, "text/html", "UTF-8", null)
     }
 
+    private fun startProgressSaver() {
+        progressHandler.removeCallbacks(progressRunnable)
+        progressHandler.postDelayed(progressRunnable, 2500)
+    }
+
+    private fun stopProgressSaver() {
+        progressHandler.removeCallbacks(progressRunnable)
+        saveProgress()
+    }
+
     private fun saveProgress() {
-        if (exoPlayer != null) {
-            exoPlayer?.let { player ->
-                val pos = player.currentPosition
-                val dur = player.duration
-                if (pos > 1000) {
-                    storage.saveHistory(
-                        animeId = animeId,
-                        title = animeTitle,
-                        poster = animePoster,
-                        episodeName = episodeName,
-                        sid = currentSid,
-                        nid = currentNid,
-                        positionMs = pos,
-                        durationMs = dur
-                    )
-                }
-            }
-        } else if (isEmbedPlaying && embedStartTimeMs > 0) {
-            val elapsedMs = System.currentTimeMillis() - embedStartTimeMs
-            if (elapsedMs > 5000) {
+        exoPlayer?.let { player ->
+            val pos = player.currentPosition
+            val dur = player.duration.takeIf { it > 0L } ?: 0L
+            if (pos > 1000L) {
                 storage.saveHistory(
                     animeId = animeId,
                     title = animeTitle,
@@ -545,8 +618,8 @@ class PlayerActivity : AppCompatActivity() {
                     episodeName = episodeName,
                     sid = currentSid,
                     nid = currentNid,
-                    positionMs = elapsedMs,
-                    durationMs = 0L
+                    positionMs = pos,
+                    durationMs = dur
                 )
             }
         }
@@ -554,13 +627,13 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        saveProgress()
+        stopProgressSaver()
         exoPlayer?.pause()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        saveProgress()
+        stopProgressSaver()
         hudHandler.removeCallbacks(hideHudRunnable)
         exoPlayer?.release()
         exoPlayer = null

@@ -254,19 +254,26 @@ class HomeAdapter(
                 val card = ItemContinueWatchingBinding.inflate(inflater, binding.llContinueWatchingCards, false)
                 card.ivCwPoster.loadPoster(item.poster)
                 card.tvCwTitle.text = item.title
-                card.tvCwEpisode.text = item.episodeName
+                val mins = item.positionMs / 60000
+                val secs = (item.positionMs % 60000) / 1000
                 if (item.durationMs > 0) {
                     val progress = ((item.positionMs.toFloat() / item.durationMs) * 100).toInt().coerceIn(0, 100)
                     card.pbCwProgress.progress = progress
-                    val mins = item.positionMs / 60000; val secs = (item.positionMs % 60000) / 1000
-                    card.tvCwPosition.text = "Dilanjutkan dari %02d:%02d".format(mins, secs)
-                } else { card.pbCwProgress.progress = 30; card.tvCwPosition.text = item.episodeName }
+                } else {
+                    card.pbCwProgress.progress = 30
+                }
+                card.tvCwPosition.text = if (item.positionMs > 1000) "Lanjut %02d:%02d".format(mins, secs) else item.episodeName
                 card.pbCwProgress.visibility = View.VISIBLE
+
                 card.root.setOnClickListener {
                     ctx.startActivity(Intent(ctx, PlayerActivity::class.java).apply {
-                        putExtra("ANIME_ID", item.animeId); putExtra("ANIME_TITLE", item.title)
-                        putExtra("ANIME_POSTER", item.poster); putExtra("EPISODE_NAME", item.episodeName)
-                        putExtra("SID", item.sid); putExtra("NID", item.nid)
+                        putExtra("ANIME_ID", item.animeId)
+                        putExtra("ANIME_TITLE", item.title)
+                        putExtra("ANIME_POSTER", item.poster)
+                        putExtra("EPISODE_NAME", item.episodeName)
+                        putExtra("SID", item.sid)
+                        putExtra("NID", item.nid)
+                        putExtra("START_POSITION", item.positionMs)
                     })
                 }
                 binding.llContinueWatchingCards.addView(card.root)

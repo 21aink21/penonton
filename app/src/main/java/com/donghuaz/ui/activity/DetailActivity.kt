@@ -230,6 +230,12 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun playEpisode(episode: EpisodeItem) {
+        val lastWatched = storage.getLastWatched(animeId)
+        val startPos = if (lastWatched != null && lastWatched.nid == episode.nid && lastWatched.positionMs > 1000L) {
+            lastWatched.positionMs
+        } else {
+            storage.getEpisodePosition(animeId, episode.nid)
+        }
         val intent = Intent(this, PlayerActivity::class.java).apply {
             putExtra("ANIME_ID", episode.id)
             putExtra("ANIME_TITLE", currentDetail?.title ?: intent.getStringExtra("ANIME_TITLE") ?: "")
@@ -237,6 +243,9 @@ class DetailActivity : AppCompatActivity() {
             putExtra("EPISODE_NAME", episode.episode)
             putExtra("SID", episode.sid)
             putExtra("NID", episode.nid)
+            if (startPos > 1000L) {
+                putExtra("START_POSITION", startPos)
+            }
         }
         startActivity(intent)
     }

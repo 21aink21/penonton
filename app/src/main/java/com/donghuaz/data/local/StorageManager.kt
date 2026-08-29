@@ -43,10 +43,22 @@ class StorageManager(context: Context) {
         list.add(0, item) // Add to top
         if (list.size > 50) list.removeAt(list.size - 1) // Keep latest 50
 
-        prefs.edit().putString(KEY_HISTORY, gson.toJson(list)).apply()
+        prefs.edit()
+            .putString(KEY_HISTORY, gson.toJson(list))
+            .putLong("ep_pos_${animeId}_$nid", positionMs)
+            .putLong("ep_dur_${animeId}_$nid", durationMs)
+            .apply()
 
         // Also mark episode as watched
         markEpisodeWatched(animeId, episodeName)
+    }
+
+    fun getEpisodePosition(animeId: Int, nid: Int): Long {
+        return prefs.getLong("ep_pos_${animeId}_$nid", 0L)
+    }
+
+    fun getEpisodeDuration(animeId: Int, nid: Int): Long {
+        return prefs.getLong("ep_dur_${animeId}_$nid", 0L)
     }
 
     fun getHistory(): List<WatchHistoryItem> {

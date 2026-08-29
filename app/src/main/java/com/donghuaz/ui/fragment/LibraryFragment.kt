@@ -61,6 +61,7 @@ class LibraryFragment : Fragment() {
                 putExtra("EPISODE_NAME", item.episodeName)
                 putExtra("SID", item.sid)
                 putExtra("NID", item.nid)
+                putExtra("START_POSITION", item.positionMs)
             }
             startActivity(intent)
         }
