@@ -6,10 +6,10 @@
             <solid android:color="#26FFFFFF" />
         </shape>
     </item>
-    <!-- Thin Semi-Transparent Frosted Glass Body (Alpha ~45%) -->
+    <!-- Thin Semi-Transparent Frosted Glass Body (Alpha ~50% Pure Black) -->
     <item android:top="0.8dp">
         <shape android:shape="rectangle">
-            <solid android:color="#731A1A1A" />
+            <solid android:color="#80000000" />
         </shape>
     </item>
 </layer-list>
