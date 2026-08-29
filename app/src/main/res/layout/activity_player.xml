@@ -24,6 +24,15 @@
         android:layout_height="match_parent"
         android:visibility="gone" />
 
+    <!-- Transparent Gesture Overlay for Touch/Swipe on both ExoPlayer and WebView -->
+    <View
+        android:id="@+id/gestureOverlayView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent"
+        android:clickable="true"
+        android:focusable="true" />
+
     <!-- Gesture Control Overlay HUD (Brightness / Volume / Seek / 2X) -->
     <LinearLayout
         android:id="@+id/layoutHud"

@@ -77,6 +77,8 @@ class PlayerActivity : AppCompatActivity() {
 
     private var isEmbedPlaying = false
     private var embedStartTimeMs = 0L
+    private var currentEmbedTimeSec = 0f
+    private var currentEmbedDurationSec = 0f
 
     private var initialResumePositionMs = 0L
     private var hasAppliedResumePosition = false
@@ -198,23 +200,105 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    private fun seekEmbedVideo(deltaSeconds: Float) {
+        val js = """
+            (function() {
+                try {
+                    var v = document.querySelector('video');
+                    if (v) {
+                        v.currentTime = Math.max(0, Math.min(v.duration || 99999, v.currentTime + ($deltaSeconds)));
+                        return;
+                    }
+                    var iframes = document.querySelectorAll('iframe');
+                    for (var i = 0; i < iframes.length; i++) {
+                        try {
+                            var iv = iframes[i].contentWindow.document.querySelector('video');
+                            if (iv) {
+                                iv.currentTime = Math.max(0, Math.min(iv.duration || 99999, iv.currentTime + ($deltaSeconds)));
+                                return;
+                            }
+                        } catch(e){}
+                    }
+                } catch(e){}
+            })();
+        """.trimIndent()
+        binding.webViewPlayer.evaluateJavascript(js, null)
+    }
+
+    private fun seekEmbedVideoTo(targetSec: Float) {
+        val js = """
+            (function() {
+                try {
+                    var v = document.querySelector('video');
+                    if (v) { v.currentTime = $targetSec; return; }
+                    var iframes = document.querySelectorAll('iframe');
+                    for (var i = 0; i < iframes.length; i++) {
+                        try {
+                            var iv = iframes[i].contentWindow.document.querySelector('video');
+                            if (iv) { iv.currentTime = $targetSec; return; }
+                        } catch(e){}
+                    }
+                } catch(e){}
+            })();
+        """.trimIndent()
+        binding.webViewPlayer.evaluateJavascript(js, null)
+    }
+
+    private fun setEmbedPlaybackSpeed(speed: Float) {
+        val js = """
+            (function() {
+                try {
+                    var v = document.querySelector('video');
+                    if (v) { v.playbackRate = $speed; return; }
+                    var iframes = document.querySelectorAll('iframe');
+                    for (var i = 0; i < iframes.length; i++) {
+                        try {
+                            var iv = iframes[i].contentWindow.document.querySelector('video');
+                            if (iv) { iv.playbackRate = $speed; return; }
+                        } catch(e){}
+                    }
+                } catch(e){}
+            })();
+        """.trimIndent()
+        binding.webViewPlayer.evaluateJavascript(js, null)
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     private fun setupGestures() {
         val gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                if (isScreenLocked) return false
+                val isVisible = binding.playerHeader.visibility == View.VISIBLE
+                binding.playerHeader.visibility = if (isVisible) View.GONE else View.VISIBLE
+                return true
+            }
+
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 if (isScreenLocked) return false
                 val screenWidth = binding.playerRoot.width
                 if (e.x < screenWidth / 2) {
-                    exoPlayer?.let {
-                        val newPos = (it.currentPosition - 10000).coerceAtLeast(0)
-                        it.seekTo(newPos)
+                    if (isEmbedPlaying) {
+                        seekEmbedVideo(-10f)
+                        currentEmbedTimeSec = (currentEmbedTimeSec - 10f).coerceAtLeast(0f)
                         showHud(R.drawable.ic_skip_previous, "-10s")
+                    } else {
+                        exoPlayer?.let {
+                            val newPos = (it.currentPosition - 10000).coerceAtLeast(0)
+                            it.seekTo(newPos)
+                            showHud(R.drawable.ic_skip_previous, "-10s")
+                        }
                     }
                 } else {
-                    exoPlayer?.let {
-                        val newPos = (it.currentPosition + 10000).coerceAtMost(it.duration)
-                        it.seekTo(newPos)
+                    if (isEmbedPlaying) {
+                        seekEmbedVideo(10f)
+                        currentEmbedTimeSec = (currentEmbedTimeSec + 10f).coerceAtMost(if (currentEmbedDurationSec > 0) currentEmbedDurationSec else 99999f)
                         showHud(R.drawable.ic_skip_next, "+10s")
+                    } else {
+                        exoPlayer?.let {
+                            val newPos = (it.currentPosition + 10000).coerceAtMost(it.duration)
+                            it.seekTo(newPos)
+                            showHud(R.drawable.ic_skip_next, "+10s")
+                        }
                     }
                 }
                 return true
@@ -222,20 +306,28 @@ class PlayerActivity : AppCompatActivity() {
 
             override fun onLongPress(e: MotionEvent) {
                 if (isScreenLocked || isHorizontalSwipe) return
-                exoPlayer?.let { player ->
-                    if (player.isPlaying) {
-                        isFastForwarding = true
-                        previousPlaybackSpeed = player.playbackParameters.speed
-                        player.playbackParameters = PlaybackParameters(2.0f)
-                        binding.playerRoot.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                        showHud(R.drawable.ic_speed, "2X Speed ⏩\n(Tahan Layar)", autoHide = false)
+                if (isEmbedPlaying) {
+                    isFastForwarding = true
+                    previousPlaybackSpeed = 1.0f
+                    setEmbedPlaybackSpeed(2.0f)
+                    binding.playerRoot.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                    showHud(R.drawable.ic_speed, "2X Speed ⏩\n(Tahan Layar)", autoHide = false)
+                } else {
+                    exoPlayer?.let { player ->
+                        if (player.isPlaying) {
+                            isFastForwarding = true
+                            previousPlaybackSpeed = player.playbackParameters.speed
+                            player.playbackParameters = PlaybackParameters(2.0f)
+                            binding.playerRoot.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                            showHud(R.drawable.ic_speed, "2X Speed ⏩\n(Tahan Layar)", autoHide = false)
+                        }
                     }
                 }
             }
         })
 
-        binding.playerRoot.setOnTouchListener { _, event ->
-            if (isScreenLocked) return@setOnTouchListener false
+        val touchListener = View.OnTouchListener { _, event ->
+            if (isScreenLocked) return@OnTouchListener false
             gestureDetector.onTouchEvent(event)
 
             val screenWidth = binding.playerRoot.width
@@ -247,12 +339,17 @@ class PlayerActivity : AppCompatActivity() {
                     initialTouchY = event.y
                     isLeftSwipe = event.x < screenWidth / 2
                     isHorizontalSwipe = false
-                    initialPositionMs = exoPlayer?.currentPosition ?: 0L
-                    videoDurationMs = exoPlayer?.duration?.coerceAtLeast(1L) ?: 1L
+                    if (isEmbedPlaying) {
+                        initialPositionMs = (currentEmbedTimeSec * 1000).toLong()
+                        videoDurationMs = if (currentEmbedDurationSec > 0) (currentEmbedDurationSec * 1000).toLong() else 1440000L
+                    } else {
+                        initialPositionMs = exoPlayer?.currentPosition ?: 0L
+                        videoDurationMs = exoPlayer?.duration?.coerceAtLeast(1L) ?: 1L
+                    }
                     targetSeekPositionMs = initialPositionMs
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    if (isFastForwarding) return@setOnTouchListener false
+                    if (isFastForwarding) return@OnTouchListener false
 
                     val deltaX = event.x - initialTouchX
                     val deltaY = event.y - initialTouchY
@@ -291,21 +388,33 @@ class PlayerActivity : AppCompatActivity() {
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     if (isFastForwarding) {
-                        exoPlayer?.playbackParameters = PlaybackParameters(previousPlaybackSpeed)
+                        if (isEmbedPlaying) {
+                            setEmbedPlaybackSpeed(1.0f)
+                        } else {
+                            exoPlayer?.playbackParameters = PlaybackParameters(previousPlaybackSpeed)
+                        }
                         isFastForwarding = false
-                        showHud(R.drawable.ic_speed, "${previousPlaybackSpeed}x Normal", autoHide = true)
+                        showHud(R.drawable.ic_speed, "1.0x Normal", autoHide = true)
                     }
 
                     if (isHorizontalSwipe) {
-                        exoPlayer?.seekTo(targetSeekPositionMs)
+                        if (isEmbedPlaying) {
+                            seekEmbedVideoTo(targetSeekPositionMs / 1000f)
+                            currentEmbedTimeSec = targetSeekPositionMs / 1000f
+                        } else {
+                            exoPlayer?.seekTo(targetSeekPositionMs)
+                        }
                         hudHandler.removeCallbacks(hideHudRunnable)
                         hudHandler.postDelayed(hideHudRunnable, 600)
                         isHorizontalSwipe = false
                     }
                 }
             }
-            false
+            true
         }
+
+        binding.gestureOverlayView.setOnTouchListener(touchListener)
+        binding.playerRoot.setOnTouchListener(touchListener)
     }
 
     private fun formatTime(ms: Long): String {
@@ -455,6 +564,10 @@ class PlayerActivity : AppCompatActivity() {
         binding.webViewPlayer.addJavascriptInterface(object {
             @android.webkit.JavascriptInterface
             fun onTimeUpdate(currentTimeSec: Float, durationSec: Float) {
+                currentEmbedTimeSec = currentTimeSec
+                if (durationSec > 0) {
+                    currentEmbedDurationSec = durationSec
+                }
                 val posMs = (currentTimeSec * 1000).toLong()
                 val durMs = (durationSec * 1000).toLong()
                 if (posMs > 1000L) {
@@ -507,6 +620,15 @@ class PlayerActivity : AppCompatActivity() {
                                 if (overlays[i].tagName !== 'VIDEO' && overlays[i].tagName !== 'IFRAME') {
                                     overlays[i].remove();
                                 }
+                            }
+                            var v = document.querySelector('video');
+                            if (v && !v._bridgeAttached) {
+                                v._bridgeAttached = true;
+                                v.addEventListener('timeupdate', function() {
+                                    if (window.AndroidBridge && v.currentTime > 0) {
+                                        window.AndroidBridge.onTimeUpdate(v.currentTime, v.duration || 0);
+                                    }
+                                });
                             }
                         }, 1000);
                     })();
