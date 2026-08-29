@@ -1,10 +1,8 @@
 package com.donghuaz.ui.adapter
 
-import android.graphics.RenderEffect
-import android.graphics.Shader
-import android.os.Build
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import androidx.recyclerview.widget.RecyclerView
 import com.donghuaz.data.model.AnimeItem
 import com.donghuaz.databinding.ItemHeroBannerBinding
@@ -31,6 +29,16 @@ class HeroBannerAdapter(
         holder.bind(items[position], position + 1)
     }
 
+    override fun onViewAttachedToWindow(holder: BannerViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        holder.startZoomAnimation()
+    }
+
+    override fun onViewDetachedFromWindow(holder: BannerViewHolder) {
+        super.onViewDetachedFromWindow(holder)
+        holder.resetZoom()
+    }
+
     override fun getItemCount(): Int = items.size
 
     inner class BannerViewHolder(private val binding: ItemHeroBannerBinding) :
@@ -42,8 +50,29 @@ class HeroBannerAdapter(
             binding.tvBannerEp.text = if (item.latestEp.isNotEmpty()) item.latestEp else "HD"
             binding.tvBannerRating.text = if (item.rating.isNotEmpty()) "★ ${item.rating}" else "★ 9.0"
 
+            resetZoom()
             binding.ivBanner.loadPoster(item.poster)
+            startZoomAnimation()
+
             binding.root.setOnClickListener { onItemClick(item) }
+        }
+
+        fun startZoomAnimation() {
+            binding.ivBanner.animate().cancel()
+            binding.ivBanner.scaleX = 1.0f
+            binding.ivBanner.scaleY = 1.0f
+            binding.ivBanner.animate()
+                .scaleX(1.10f)
+                .scaleY(1.10f)
+                .setDuration(3800)
+                .setInterpolator(DecelerateInterpolator(1.2f))
+                .start()
+        }
+
+        fun resetZoom() {
+            binding.ivBanner.animate().cancel()
+            binding.ivBanner.scaleX = 1.0f
+            binding.ivBanner.scaleY = 1.0f
         }
     }
 }

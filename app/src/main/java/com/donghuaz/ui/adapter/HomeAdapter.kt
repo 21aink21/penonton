@@ -182,6 +182,9 @@ class HomeAdapter(
                     if (position in banners.indices) {
                         onBannerSelected(banners[position].poster)
                     }
+                    val rv = binding.vpFeatured.getChildAt(0) as? RecyclerView
+                    val holder = rv?.findViewHolderForAdapterPosition(position) as? HeroBannerAdapter.BannerViewHolder
+                    holder?.startZoomAnimation()
                 }
                 override fun onPageScrollStateChanged(state: Int) {
                     if (state == ViewPager2.SCROLL_STATE_DRAGGING) handler.removeCallbacks(runnable)
