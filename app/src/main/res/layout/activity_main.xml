@@ -15,13 +15,6 @@
         android:importantForAccessibility="no"
         android:scaleType="centerCrop" />
 
-    <!-- Dark Gradient Dimming Scrim for Soft Ambient Glow -->
-    <View
-        android:id="@+id/vBackdropScrim"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#80121212" />
-
     <!-- Large Ambient Logo Watermark + Brand Text Lockup on Background (1dp Margin, Alpha 0.40) -->
     <LinearLayout
         android:id="@+id/layoutBackgroundWatermark"

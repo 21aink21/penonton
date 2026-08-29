@@ -36,29 +36,13 @@ class HeroBannerAdapter(
     inner class BannerViewHolder(private val binding: ItemHeroBannerBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        init {
-            // Apply 30% Gaussian Blur effect on modern Android (API 31+)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                binding.ivBannerBlur.setRenderEffect(
-                    RenderEffect.createBlurEffect(
-                        25f, 25f, Shader.TileMode.CLAMP
-                    )
-                )
-            }
-        }
-
         fun bind(item: AnimeItem, rank: Int) {
             binding.tvBannerTitle.text = item.title
             binding.tvBannerRank.text = "🔥 Top #$rank"
             binding.tvBannerEp.text = if (item.latestEp.isNotEmpty()) item.latestEp else "HD"
             binding.tvBannerRating.text = if (item.rating.isNotEmpty()) "★ ${item.rating}" else "★ 9.0"
 
-            // Foreground crisp poster
             binding.ivBanner.loadPoster(item.poster)
-
-            // Background duplicate ambient blur poster (30% opacity)
-            binding.ivBannerBlur.loadPoster(item.poster)
-
             binding.root.setOnClickListener { onItemClick(item) }
         }
     }
