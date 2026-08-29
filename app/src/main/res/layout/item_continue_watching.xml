@@ -1,95 +1,113 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="148dp"
     android:layout_height="wrap_content"
     android:layout_marginEnd="8dp"
-    android:foreground="?attr/selectableItemBackground"
-    app:cardCornerRadius="10dp"
-    app:cardBackgroundColor="@color/surface"
-    app:cardElevation="0dp">
+    android:clipChildren="false">
 
-    <FrameLayout
+    <!-- 1. Duplicate Background Layer (Blur & Ambient Glow) -->
+    <ImageView
+        android:id="@+id/ivCwPosterBlur"
         android:layout_width="match_parent"
-        android:layout_height="200dp">
+        android:layout_height="200dp"
+        android:alpha="0.45"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        android:scaleX="1.08"
+        android:scaleY="1.08" />
 
-        <!-- Poster -->
-        <ImageView
-            android:id="@+id/ivCwPoster"
+    <!-- 2. Foreground Crisp Poster Card -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:foreground="?attr/selectableItemBackground"
+        app:cardBackgroundColor="@color/surface"
+        app:cardCornerRadius="10dp"
+        app:cardElevation="3dp">
+
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:background="@color/surface_variant" />
+            android:layout_height="200dp">
 
-        <!-- Bottom gradient -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:layout_gravity="bottom"
-            android:background="@drawable/gradient_poster_bottom" />
+            <!-- Poster -->
+            <ImageView
+                android:id="@+id/ivCwPoster"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/surface_variant"
+                android:scaleType="centerCrop" />
 
-        <!-- Play icon center -->
-        <ImageView
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_play"
-            android:alpha="0.85"
-            app:tint="@color/text_primary" />
+            <!-- Bottom gradient -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/gradient_poster_bottom" />
 
-        <!-- Episode badge top-right (Enlarged Gold Accent) -->
-        <TextView
-            android:id="@+id/tvCwEpisode"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
-            android:layout_margin="7dp"
-            android:background="@drawable/bg_badge_gold_dark"
-            android:textColor="@color/accent_gold"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            tools:text="EP 97" />
+            <!-- Play icon center -->
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:alpha="0.85"
+                android:src="@drawable/ic_play"
+                app:tint="@color/text_primary" />
 
-        <!-- Gold Accent Progress Bar (Enlarged 6dp) -->
-        <ProgressBar
-            android:id="@+id/pbCwProgress"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="6dp"
-            android:layout_gravity="bottom"
-            android:layout_marginBottom="36dp"
-            android:max="100"
-            android:progressTint="@color/accent_gold"
-            android:progressBackgroundTint="#4DF59E0B" />
+            <!-- Episode badge top-right (Enlarged Gold Accent) -->
+            <TextView
+                android:id="@+id/tvCwEpisode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="7dp"
+                android:background="@drawable/bg_badge_gold_dark"
+                android:textColor="@color/accent_gold"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                tools:text="EP 97" />
 
-        <!-- Title bottom -->
-        <TextView
-            android:id="@+id/tvCwTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:paddingHorizontal="8dp"
-            android:paddingBottom="18dp"
-            android:textColor="@color/text_primary"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            tools:text="Soul Land 2" />
+            <!-- Gold Accent Progress Bar (Enlarged 6dp) -->
+            <ProgressBar
+                android:id="@+id/pbCwProgress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_gravity="bottom"
+                android:layout_marginBottom="36dp"
+                android:max="100"
+                android:progressBackgroundTint="#4DF59E0B"
+                android:progressTint="@color/accent_gold" />
 
-        <!-- Position label bottom-most -->
-        <TextView
-            android:id="@+id/tvCwPosition"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:paddingHorizontal="8dp"
-            android:paddingBottom="6dp"
-            android:textColor="@color/crimsonnoir_light"
-            android:textSize="9sp"
-            tools:text="Dilanjutkan dari 12:34" />
-    </FrameLayout>
+            <!-- Title bottom -->
+            <TextView
+                android:id="@+id/tvCwTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingHorizontal="8dp"
+                android:paddingBottom="18dp"
+                android:textColor="@color/text_primary"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                tools:text="Soul Land 2" />
 
-</androidx.cardview.widget.CardView>
+            <!-- Position label bottom-most -->
+            <TextView
+                android:id="@+id/tvCwPosition"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:paddingHorizontal="8dp"
+                android:paddingBottom="6dp"
+                android:textColor="@color/crimsonnoir_light"
+                android:textSize="9sp"
+                tools:text="Dilanjutkan dari 12:34" />
+        </FrameLayout>
+
+    </androidx.cardview.widget.CardView>
+</FrameLayout>

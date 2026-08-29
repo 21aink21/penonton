@@ -249,7 +249,15 @@ class HomeAdapter(
             binding.llContinueWatchingCards.removeAllViews()
             items.forEach { item ->
                 val card = ItemContinueWatchingBinding.inflate(inflater, binding.llContinueWatchingCards, false)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    card.ivCwPosterBlur.setRenderEffect(
+                        android.graphics.RenderEffect.createBlurEffect(
+                            20f, 20f, android.graphics.Shader.TileMode.CLAMP
+                        )
+                    )
+                }
                 card.ivCwPoster.loadPoster(item.poster)
+                card.ivCwPosterBlur.loadPoster(item.poster)
                 card.tvCwTitle.text = item.title
                 card.tvCwEpisode.text = item.episodeName
                 if (item.durationMs > 0) {
@@ -278,11 +286,21 @@ class HomeAdapter(
 
     inner class AnimeViewHolder(private val binding: ItemAnimeBinding) :
         RecyclerView.ViewHolder(binding.root) {
+        init {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                binding.ivPosterBlur.setRenderEffect(
+                    android.graphics.RenderEffect.createBlurEffect(
+                        20f, 20f, android.graphics.Shader.TileMode.CLAMP
+                    )
+                )
+            }
+        }
         fun bind(item: AnimeItem) {
             binding.tvTitle.text = item.title
             if (item.latestEp.isNotEmpty()) { binding.tvLatestEp.visibility = View.VISIBLE; binding.tvLatestEp.text = item.latestEp } else binding.tvLatestEp.visibility = View.GONE
             if (item.rating.isNotEmpty()) { binding.layoutRating.visibility = View.VISIBLE; binding.tvRating.text = item.rating } else binding.layoutRating.visibility = View.GONE
             binding.ivPoster.loadPoster(item.poster)
+            binding.ivPosterBlur.loadPoster(item.poster)
             binding.root.setOnClickListener { onAnimeClick(item) }
         }
     }

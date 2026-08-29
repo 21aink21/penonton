@@ -1,92 +1,111 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="3dp"
-    android:foreground="?attr/selectableItemBackground"
-    app:cardBackgroundColor="@color/surface"
-    app:cardCornerRadius="10dp"
-    app:cardElevation="0dp">
+    android:clipChildren="false">
 
-    <FrameLayout
+    <!-- 1. Duplicate Background Layer (Blur & Ambient Glow) -->
+    <ImageView
+        android:id="@+id/ivPosterBlur"
         android:layout_width="match_parent"
-        android:layout_height="220dp">
+        android:layout_height="220dp"
+        android:layout_margin="3dp"
+        android:alpha="0.45"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        android:scaleX="1.08"
+        android:scaleY="1.08" />
 
-        <!-- Poster image - full bleed -->
-        <ImageView
-            android:id="@+id/ivPoster"
+    <!-- 2. Foreground Crisp Poster Card -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="3dp"
+        android:foreground="?attr/selectableItemBackground"
+        app:cardBackgroundColor="@color/surface"
+        app:cardCornerRadius="10dp"
+        app:cardElevation="3dp">
+
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:background="@color/surface_variant" />
+            android:layout_height="220dp">
 
-        <!-- Bottom gradient overlay for text -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="110dp"
-            android:layout_gravity="bottom"
-            android:background="@drawable/gradient_poster_bottom" />
-
-        <!-- Rating badge — top left (Enlarged Gold Accent) -->
-        <LinearLayout
-            android:id="@+id/layoutRating"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|start"
-            android:layout_margin="7dp"
-            android:background="@drawable/bg_badge_gold_dark"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
+            <!-- Poster image - full bleed -->
             <ImageView
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@drawable/ic_star"
-                app:tint="@color/accent_gold" />
+                android:id="@+id/ivPoster"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/surface_variant"
+                android:scaleType="centerCrop" />
 
-            <TextView
-                android:id="@+id/tvRating"
+            <!-- Bottom gradient overlay for text -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="110dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/gradient_poster_bottom" />
+
+            <!-- Rating badge — top left (Enlarged Gold Accent) -->
+            <LinearLayout
+                android:id="@+id/layoutRating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="3dp"
+                android:layout_gravity="top|start"
+                android:layout_margin="7dp"
+                android:background="@drawable/bg_badge_gold_dark"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_star"
+                    app:tint="@color/accent_gold" />
+
+                <TextView
+                    android:id="@+id/tvRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:textColor="@color/accent_gold"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    tools:text="9.5" />
+            </LinearLayout>
+
+            <!-- Episode badge — top right (Enlarged Gold Accent) -->
+            <TextView
+                android:id="@+id/tvLatestEp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="7dp"
+                android:background="@drawable/bg_badge_gold_dark"
                 android:textColor="@color/accent_gold"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                tools:text="9.5" />
-        </LinearLayout>
+                tools:text="EP97" />
 
-        <!-- Episode badge — top right (Enlarged Gold Accent) -->
-        <TextView
-            android:id="@+id/tvLatestEp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
-            android:layout_margin="7dp"
-            android:background="@drawable/bg_badge_gold_dark"
-            android:textColor="@color/accent_gold"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            tools:text="EP97" />
+            <!-- Title text overlaid at bottom -->
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:paddingHorizontal="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="8dp"
+                android:textColor="@color/text_primary"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                tools:text="Tales of Herding Gods" />
 
-        <!-- Title text overlaid at bottom -->
-        <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:paddingHorizontal="8dp"
-            android:paddingBottom="8dp"
-            android:paddingTop="4dp"
-            android:textColor="@color/text_primary"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            tools:text="Tales of Herding Gods" />
+        </FrameLayout>
 
-    </FrameLayout>
-
-</androidx.cardview.widget.CardView>
+    </androidx.cardview.widget.CardView>
+</FrameLayout>
