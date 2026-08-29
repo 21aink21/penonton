@@ -7,12 +7,12 @@
     android:layout_height="match_parent"
     android:clipChildren="false">
 
-    <!-- 1. Layer Belakang (Layer Duplikat: Blur 50%, Opacity 30% Ambient Glow) -->
+    <!-- 1. Layer Belakang (Layer Duplikat: Blur 50%, Opacity 50% Ambient Glow) -->
     <ImageView
         android:id="@+id/ivBannerBlur"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:alpha="0.30"
+        android:alpha="0.50"
         android:importantForAccessibility="no"
         android:scaleType="centerCrop"
         android:scaleX="1.12"

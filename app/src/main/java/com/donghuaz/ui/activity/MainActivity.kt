@@ -13,6 +13,7 @@ import com.donghuaz.ui.fragment.LibraryFragment
 import com.donghuaz.ui.fragment.RankingFragment
 import com.donghuaz.ui.fragment.ScheduleFragment
 import com.donghuaz.util.GradientBackground
+import com.donghuaz.util.loadPoster
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,9 +31,26 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         GradientBackground.apply(this)
+        setupAmbientBackdrop()
         setupFragments()
         setupBottomNav()
         setupLogoStyle()
+    }
+
+    private fun setupAmbientBackdrop() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            binding.ivDynamicHomeBackdrop.setRenderEffect(
+                android.graphics.RenderEffect.createBlurEffect(
+                    50f, 50f, android.graphics.Shader.TileMode.CLAMP
+                )
+            )
+        }
+    }
+
+    fun updateAmbientBackdrop(posterUrl: String) {
+        if (posterUrl.isNotEmpty()) {
+            binding.ivDynamicHomeBackdrop.loadPoster(posterUrl)
+        }
     }
 
     private fun setupLogoStyle() {

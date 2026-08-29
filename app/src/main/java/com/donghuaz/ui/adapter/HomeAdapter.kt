@@ -26,6 +26,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 class HomeAdapter(
     private val onAnimeClick: (AnimeItem) -> Unit,
     private val onBannerClick: (AnimeItem) -> Unit,
+    private val onBannerSelected: (String) -> Unit = {},
     private val onSearchSubmit: (String) -> Unit,
     private val onSearchClear: () -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -177,13 +178,25 @@ class HomeAdapter(
             binding.vpFeatured.offscreenPageLimit = 3
             TabLayoutMediator(binding.tabIndicator, binding.vpFeatured) { _, _ -> }.attach()
             binding.vpFeatured.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    if (position in banners.indices) {
+                        onBannerSelected(banners[position].poster)
+                    }
+                }
                 override fun onPageScrollStateChanged(state: Int) {
                     if (state == ViewPager2.SCROLL_STATE_DRAGGING) handler.removeCallbacks(runnable)
                     else if (state == ViewPager2.SCROLL_STATE_IDLE) startAutoSlide()
                 }
             })
         }
-        fun bind(items: List<AnimeItem>) { bannerAdapter.submitList(items); startAutoSlide() }
+        fun bind(items: List<AnimeItem>) {
+            bannerAdapter.submitList(items)
+            if (items.isNotEmpty()) {
+                val cur = binding.vpFeatured.currentItem.coerceIn(0, items.size - 1)
+                onBannerSelected(items[cur].poster)
+            }
+            startAutoSlide()
+        }
         private fun startAutoSlide() { handler.removeCallbacks(runnable); handler.postDelayed(runnable, 3500) }
         fun stopAutoSlide() { handler.removeCallbacks(runnable) }
     }
