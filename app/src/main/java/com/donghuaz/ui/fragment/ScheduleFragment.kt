@@ -13,7 +13,7 @@ import com.donghuaz.data.model.WeekdaySchedule
 import com.donghuaz.data.parser.DonghuaParser
 import com.donghuaz.databinding.FragmentScheduleBinding
 import com.donghuaz.ui.activity.DetailActivity
-import com.donghuaz.ui.adapter.AnimeAdapter
+import com.donghuaz.ui.adapter.ScheduleAdapter
 import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -23,7 +23,7 @@ class ScheduleFragment : Fragment() {
     private var _binding: FragmentScheduleBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var animeAdapter: AnimeAdapter
+    private lateinit var scheduleAdapter: ScheduleAdapter
     private var schedules = listOf<WeekdaySchedule>()
 
     override fun onCreateView(
@@ -38,7 +38,7 @@ class ScheduleFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        animeAdapter = AnimeAdapter { anime ->
+        scheduleAdapter = ScheduleAdapter { anime ->
             val intent = Intent(requireContext(), DetailActivity::class.java).apply {
                 putExtra("ANIME_ID", anime.id)
                 putExtra("ANIME_TITLE", anime.title)
@@ -49,7 +49,7 @@ class ScheduleFragment : Fragment() {
 
         binding.rvSchedule.apply {
             layoutManager = GridLayoutManager(requireContext(), 2)
-            adapter = animeAdapter
+            adapter = scheduleAdapter
             setHasFixedSize(true)
             setItemViewCacheSize(25)
         }
@@ -103,7 +103,7 @@ class ScheduleFragment : Fragment() {
     private fun displayScheduleForDay(dayIndex: Int) {
         val schedule = schedules.getOrNull(dayIndex)
         val items = schedule?.animeList ?: emptyList()
-        animeAdapter.submitList(items)
+        scheduleAdapter.submitList(items)
 
         binding.tvEmptySchedule.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
         binding.rvSchedule.visibility = if (items.isNotEmpty()) View.VISIBLE else View.GONE
