@@ -245,10 +245,12 @@ object DonghuaParser {
             compareBy<ServerGroup> { s ->
                 val lower = s.serverName.lowercase()
                 when {
-                    lower.contains("ganjing") || lower.contains("ganjian") || lower.contains("gang") -> 0
-                    lower.contains("indo") || lower.contains("indonesia") -> 1
-                    lower.contains("eng") || lower.contains("english") -> 2
-                    else -> 3
+                    lower.contains("4k indo") || lower.contains("indo 4k") || lower.contains("indorumble") -> 0
+                    lower.contains("4k") || lower.contains("vip") -> 1
+                    lower.contains("indo") || lower.contains("indonesia") -> 2
+                    lower.contains("ganjing") || lower.contains("gang") -> 3
+                    lower.contains("eng") || lower.contains("english") -> 4
+                    else -> 5
                 }
             }.thenByDescending { it.count }
         )
@@ -256,6 +258,103 @@ object DonghuaParser {
         val detail = AnimeDetail(animeId, title, status, poster, synopsis, meta, sortedServers)
         detailCache.put(animeId, detail)
         detail
+    }
+
+    suspend fun extractRumbleStream(rawUrl: String): Triple<String?, Map<String, String>, String?> = withContext(Dispatchers.IO) {
+        var m3u8Url: String? = null
+        val qualities = mutableMapOf<String, String>()
+        var embedUrl: String? = null
+
+        val vid = when {
+            rawUrl.startsWith("http") -> {
+                val m = Pattern.compile("rumble\\.com/embed/([^/]+)").matcher(rawUrl)
+                if (m.find()) m.group(1) else ""
+            }
+            rawUrl.length in 5..15 && !rawUrl.contains("/") -> rawUrl
+            else -> ""
+        }
+
+        if (rawUrl.contains("rumble.com/hls-vod/") || (rawUrl.startsWith("http") && (rawUrl.contains(".m3u8") || rawUrl.contains(".mp4")))) {
+            m3u8Url = rawUrl
+            qualities["auto"] = rawUrl
+            return@withContext Triple(m3u8Url, qualities, rawUrl)
+        }
+
+        if (vid.isNotEmpty()) {
+            embedUrl = "https://rumble.com/embed/$vid/"
+            val jsUrl = "https://rumble.com/embedJS/u3/?request=video&ver=2&v=$vid"
+            try {
+                val req = Request.Builder()
+                    .url(jsUrl)
+                    .header("User-Agent", USER_AGENT)
+                    .build()
+                client.newCall(req).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val body = response.body?.string() ?: ""
+                        val jsonObj = gson.fromJson(body, JsonObject::class.java)
+
+                        // 1. Check HLS Master Playlist
+                        val uObj = jsonObj.getAsJsonObject("u")
+                        val hlsObj = uObj?.getAsJsonObject("hls")
+                        val hlsUrl = hlsObj?.get("url")?.asString
+                        if (!hlsUrl.isNullOrEmpty()) {
+                            m3u8Url = hlsUrl
+                            qualities["auto"] = hlsUrl
+                        }
+
+                        // 2. Check quality streams in 'ua' or 'u' (4K, 2K, 1080p, 720p, 480p, etc.)
+                        val uaObj = jsonObj.getAsJsonObject("ua")
+                        val tarObj = uaObj?.getAsJsonObject("tar") ?: uObj?.getAsJsonObject("tar")
+                        if (tarObj != null) {
+                            for (qKey in listOf("2160", "1440", "1080", "720", "480", "360", "240")) {
+                                val qData = tarObj.get(qKey)
+                                val qUrl = when {
+                                    qData?.isJsonObject == true -> qData.asJsonObject.get("url")?.asString
+                                    qData?.isJsonPrimitive == true -> qData.asString
+                                    else -> null
+                                }
+                                if (!qUrl.isNullOrEmpty()) {
+                                    val label = when (qKey) {
+                                        "2160" -> "4K Ultra HD (2160p)"
+                                        "1440" -> "2K QHD (1440p)"
+                                        "1080" -> "Full HD (1080p)"
+                                        "720" -> "HD (720p)"
+                                        "480" -> "SD (480p)"
+                                        "360" -> "Low (360p)"
+                                        else -> "${qKey}p"
+                                    }
+                                    qualities[label] = qUrl
+                                    if (m3u8Url == null) m3u8Url = qUrl
+                                }
+                            }
+                        }
+
+                        // 3. Check MP4 direct streams
+                        val mp4Obj = uaObj?.getAsJsonObject("mp4") ?: uObj?.getAsJsonObject("mp4")
+                        if (mp4Obj != null) {
+                            for (qKey in listOf("1080", "720", "480", "360", "240")) {
+                                val qData = mp4Obj.get(qKey)
+                                val qUrl = when {
+                                    qData?.isJsonObject == true -> qData.asJsonObject.get("url")?.asString
+                                    qData?.isJsonPrimitive == true -> qData.asString
+                                    else -> null
+                                }
+                                if (!qUrl.isNullOrEmpty()) {
+                                    qualities["MP4 ${qKey}p"] = qUrl
+                                    if (m3u8Url == null) m3u8Url = qUrl
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+
+        if (m3u8Url == null && rawUrl.startsWith("http")) {
+            embedUrl = rawUrl
+        }
+
+        Triple(m3u8Url, qualities, embedUrl)
     }
 
     suspend fun getStream(animeId: Int, sid: Int = 1, nid: Int = 1): StreamResult = withContext(Dispatchers.IO) {
@@ -279,15 +378,14 @@ object DonghuaParser {
         var embedUrl: String? = null
         val qualities = mutableMapOf<String, String>()
 
-        if (rawUrl.startsWith("http") && (rawUrl.contains(".m3u8") || rawUrl.contains(".mp4"))) {
-            if (rawUrl.contains("rumble.com/hls-vod/")) {
-                embedUrl = rawUrl
-            } else {
-                m3u8Url = rawUrl
-                qualities["auto"] = rawUrl
-            }
-        } else if (provider.contains("rumble") || provider.contains("rum")) {
-            embedUrl = if (rawUrl.startsWith("http")) rawUrl else "https://rumble.com/embed/$rawUrl/"
+        if (provider.contains("rumble") || provider.contains("rum") || provider.contains("4k") || provider.contains("vip") || rawUrl.contains("rumble.com")) {
+            val (extractedM3u8, extractedQualities, fallbackEmbed) = extractRumbleStream(rawUrl)
+            m3u8Url = extractedM3u8
+            qualities.putAll(extractedQualities)
+            embedUrl = fallbackEmbed
+        } else if (rawUrl.startsWith("http") && (rawUrl.contains(".m3u8") || rawUrl.contains(".mp4"))) {
+            m3u8Url = rawUrl
+            qualities["auto"] = rawUrl
         } else if (provider.contains("ganjing") || provider.contains("gang")) {
             embedUrl = if (rawUrl.startsWith("http")) rawUrl else "https://www.ganjingworld.com/embed/$rawUrl"
         } else if (provider == "dailymotion" || (rawUrl.length <= 25 && !rawUrl.startsWith("http"))) {
