@@ -6,14 +6,17 @@
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
 
-    <!-- Full-screen Dynamic Ambient Backdrop (Duplicate Layer with 30% Blur & 70% Opacity) -->
-    <ImageView
+    <!-- Top-to-Search Dynamic Ambient Backdrop (Duplicate Layer with 30% Blur & 70% Opacity fading to Search Box) -->
+    <com.donghuaz.ui.widget.FadingImageView
         android:id="@+id/ivDynamicHomeBackdrop"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="440dp"
         android:alpha="0.70"
         android:importantForAccessibility="no"
-        android:scaleType="centerCrop" />
+        android:scaleType="centerCrop"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Large Ambient Logo Watermark + Brand Text Lockup on Background (1dp Margin, Alpha 0.40) -->
     <LinearLayout
