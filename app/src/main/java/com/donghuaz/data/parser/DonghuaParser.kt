@@ -245,10 +245,11 @@ object DonghuaParser {
             compareBy<ServerGroup> { s ->
                 val lower = s.serverName.lowercase()
                 when {
-                    lower.contains("ganjing") || lower.contains("ganjian") || lower.contains("gang") -> 0
-                    lower.contains("indo") || lower.contains("indonesia") -> 1
-                    lower.contains("eng") || lower.contains("english") -> 2
-                    else -> 3
+                    (lower.contains("ganjing") || lower.contains("ganjian") || lower.contains("gang")) && (lower.contains("indo") || lower.contains("indonesia")) -> 0
+                    lower.contains("ganjing") || lower.contains("ganjian") || lower.contains("gang") -> 1
+                    lower.contains("indo") || lower.contains("indonesia") -> 2
+                    lower.contains("eng") || lower.contains("english") -> 3
+                    else -> 4
                 }
             }.thenByDescending { it.count }
         )
