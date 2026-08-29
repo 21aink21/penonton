@@ -20,7 +20,7 @@
         android:id="@+id/vBackdropScrim"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#8009060F" />
+        android:background="#80121212" />
 
     <!-- Large Ambient Logo Watermark + Brand Text Lockup on Background (1dp Margin, Alpha 0.40) -->
     <LinearLayout

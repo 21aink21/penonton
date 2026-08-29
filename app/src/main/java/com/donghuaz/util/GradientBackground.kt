@@ -6,15 +6,13 @@ import android.view.View
 
 object GradientBackground {
 
-    // Diagonal from Top-Left Obsidian to Bottom-Right Crimson
-    // Colors: 0xFF09060F, 0xFF1E0514, 0xFF380317, 0xFF5A021E, 0xFF7A0225, 0xFFC50337
+    // Diagonal from Top-Left to Bottom-Right (#121212 ➔ #1A1A1A)
     private val COLORS = intArrayOf(
-        0xFF09060F.toInt(),
-        0xFF1E0514.toInt(),
-        0xFF380317.toInt(),
-        0xFF5A021E.toInt(),
-        0xFF7A0225.toInt(),
-        0xFFC50337.toInt()
+        0xFF121212.toInt(),
+        0xFF141414.toInt(),
+        0xFF161616.toInt(),
+        0xFF181818.toInt(),
+        0xFF1A1A1A.toInt()
     )
 
     fun createDrawable(): GradientDrawable {
@@ -26,8 +24,8 @@ object GradientBackground {
     fun apply(activity: Activity) {
         val gradient = createDrawable()
         activity.window.decorView.background = gradient
-        activity.window.statusBarColor = 0xFF09060F.toInt()
-        activity.window.navigationBarColor = 0xFF1E0514.toInt()
+        activity.window.statusBarColor = 0xFF121212.toInt()
+        activity.window.navigationBarColor = 0xFF1A1A1A.toInt()
     }
 
     fun apply(view: View) {
