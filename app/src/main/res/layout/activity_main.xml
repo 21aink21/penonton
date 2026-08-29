@@ -6,6 +6,20 @@
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
 
+    <!-- Large Ambient Logo Watermark Overlay on Background -->
+    <ImageView
+        android:id="@+id/ivBackgroundWatermark"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:alpha="0.06"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter"
+        android:src="@mipmap/ic_launcher"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <!-- Top App Header with Search -->
     <LinearLayout
         android:id="@+id/mainHeader"
@@ -20,8 +34,25 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- App Logo Icon (Card with 8dp radius) -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="10dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp">
+
+                <ImageView
+                    android:id="@+id/ivHeaderAppIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@mipmap/ic_launcher" />
+            </androidx.cardview.widget.CardView>
 
             <TextView
                 android:id="@+id/tvLogo"
