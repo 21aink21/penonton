@@ -164,6 +164,7 @@
             android:layout_height="match_parent"
             android:background="@android:color/transparent"
             app:elevation="0dp"
+            app:itemActiveIndicatorStyle="@null"
             app:itemIconTint="@color/nav_item_color"
             app:itemTextColor="@color/nav_item_color"
             app:itemRippleColor="@color/primary_variant"
