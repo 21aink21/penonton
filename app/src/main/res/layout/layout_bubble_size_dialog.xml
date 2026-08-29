@@ -35,7 +35,7 @@
             android:id="@+id/tvSizeValue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="60 dp"
+            android:text="64 dp"
             android:textColor="@color/accent_gold"
             android:textSize="15sp"
             android:textStyle="bold" />
@@ -45,26 +45,63 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:layout_marginBottom="16dp"
-        android:text="Geser slider untuk menyesuaikan lebar kapsul balon navigasi secara real-time"
+        android:layout_marginBottom="14dp"
+        android:text="Geser slider untuk mengubah lebar dan bentuk kapsul balon secara langsung"
         android:textColor="@color/text_secondary"
         android:textSize="12sp" />
 
-    <!-- Material Slider for Bubble Size (40dp to 90dp) -->
+    <!-- Live Interactive Preview Box -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginBottom="16dp"
+        android:background="#1A1A1A">
+
+        <View
+            android:id="@+id/vPreviewBubble"
+            android:layout_width="64dp"
+            android:layout_height="44dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_nav_bubble_pill" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_home"
+                app:tint="#FC6F01" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Beranda"
+                android:textColor="#FC6F01"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Material Slider for Bubble Size (40dp to 95dp) -->
     <com.google.android.material.slider.Slider
         android:id="@+id/sliderBubbleSize"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:valueFrom="40.0"
-        android:valueTo="90.0"
+        android:valueTo="95.0"
         android:stepSize="1.0"
-        android:value="60.0"
+        android:value="64.0"
         app:thumbColor="@color/accent_gold"
         app:trackColorActive="@color/accent_gold"
         app:trackColorInactive="#33FFFFFF"
         app:haloColor="#33FC6F01" />
 
-    <!-- Quick Preset Buttons (50dp, 60dp, 75dp) -->
+    <!-- Quick Preset Buttons (48dp, 64dp, 85dp) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -78,8 +115,8 @@
             android:layout_height="38dp"
             android:layout_weight="1"
             android:layout_marginEnd="4dp"
-            android:text="50 dp"
-            android:textSize="12sp"
+            android:text="48 dp (Kecil)"
+            android:textSize="11sp"
             android:textColor="@color/text_primary"
             android:backgroundTint="#262626" />
 
@@ -89,7 +126,7 @@
             android:layout_height="38dp"
             android:layout_weight="1"
             android:layout_marginHorizontal="4dp"
-            android:text="60 dp (Default)"
+            android:text="64 dp (Sedang)"
             android:textSize="11sp"
             android:textColor="@color/accent_gold"
             android:backgroundTint="#262626" />
@@ -100,8 +137,8 @@
             android:layout_height="38dp"
             android:layout_weight="1"
             android:layout_marginStart="4dp"
-            android:text="75 dp"
-            android:textSize="12sp"
+            android:text="85 dp (Besar)"
+            android:textSize="11sp"
             android:textColor="@color/text_primary"
             android:backgroundTint="#262626" />
     </LinearLayout>

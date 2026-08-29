@@ -155,12 +155,29 @@ class MainActivity : AppCompatActivity() {
     private fun applyBubbleSize(sizeDp: Int) {
         val density = resources.displayMetrics.density
         val widthPx = (sizeDp * density).toInt()
-        val params = binding.vNavBubbleIndicator.layoutParams
+        val heightPx = ((32 + (sizeDp - 40) * 0.35f) * density).toInt().coerceIn((36 * density).toInt(), (50 * density).toInt())
+        val cornerRadius = heightPx / 2f
+
+        val params = binding.vNavBubbleIndicator.layoutParams as? android.widget.FrameLayout.LayoutParams
+            ?: android.widget.FrameLayout.LayoutParams(widthPx, heightPx)
         params.width = widthPx
+        params.height = heightPx
+        params.gravity = android.view.Gravity.CENTER_VERTICAL
         binding.vNavBubbleIndicator.layoutParams = params
-        binding.vNavBubbleIndicator.requestLayout()
-        binding.bottomNav.post {
-            moveBubbleIndicator(currentNavIndex, animate = false)
+
+        val bgDrawable = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+            this.cornerRadius = cornerRadius
+            setColor(android.graphics.Color.parseColor("#38FC6F01"))
+            setStroke((1.5f * density).toInt(), android.graphics.Color.parseColor("#E6FC6F01"))
+        }
+        binding.vNavBubbleIndicator.background = bgDrawable
+
+        val navWidth = binding.bottomNav.width.toFloat()
+        if (navWidth > 0f) {
+            val tabWidth = navWidth / 4f
+            val targetX = (tabWidth * currentNavIndex) + (tabWidth - widthPx.toFloat()) / 2f
+            binding.vNavBubbleIndicator.translationX = targetX
         }
     }
 
@@ -176,7 +193,9 @@ class MainActivity : AppCompatActivity() {
 
         val itemCount = 4
         val tabWidth = navWidth / itemCount
-        val indicatorWidth = binding.vNavBubbleIndicator.width.toFloat().coerceAtLeast(1f)
+        val density = resources.displayMetrics.density
+        val indicatorWidth = binding.vNavBubbleIndicator.layoutParams?.width?.toFloat()
+            ?.takeIf { it > 0 } ?: (StorageManager.getInstance(this).getBubbleSize() * density)
         val targetX = (tabWidth * index) + (tabWidth - indicatorWidth) / 2f
 
         if (animate) {
