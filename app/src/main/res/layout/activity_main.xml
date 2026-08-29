@@ -6,12 +6,12 @@
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
 
-    <!-- Full-screen Dynamic Ambient Backdrop (Duplicate Layer with 50% Blur & 50% Opacity) -->
+    <!-- Full-screen Dynamic Ambient Backdrop (Duplicate Layer with 30% Blur & 70% Opacity) -->
     <ImageView
         android:id="@+id/ivDynamicHomeBackdrop"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:alpha="0.50"
+        android:alpha="0.70"
         android:importantForAccessibility="no"
         android:scaleType="centerCrop" />
 
@@ -20,7 +20,7 @@
         android:id="@+id/vBackdropScrim"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#9909060F" />
+        android:background="#8009060F" />
 
     <!-- Large Ambient Logo Watermark + Brand Text Lockup on Background (1dp Margin, Alpha 0.40) -->
     <LinearLayout
@@ -120,13 +120,13 @@
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintTop_toBottomOf="@id/mainHeader" />
 
-    <!-- Bottom Navigation Bar -->
+    <!-- Bottom Navigation Bar (Glass Translucent allowing ambient glow) -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="64dp"
-        android:background="@color/surface"
-        app:elevation="8dp"
+        android:background="@drawable/bg_bottom_nav_glass"
+        app:elevation="0dp"
         app:itemIconTint="@color/nav_item_color"
         app:itemTextColor="@color/nav_item_color"
         app:itemRippleColor="@color/primary_variant"

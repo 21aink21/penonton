@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             binding.ivDynamicHomeBackdrop.setRenderEffect(
                 android.graphics.RenderEffect.createBlurEffect(
-                    50f, 50f, android.graphics.Shader.TileMode.CLAMP
+                    30f, 30f, android.graphics.Shader.TileMode.CLAMP
                 )
             )
         }

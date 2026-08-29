@@ -37,11 +37,11 @@ class HeroBannerAdapter(
         RecyclerView.ViewHolder(binding.root) {
 
         init {
-            // Apply 50% Gaussian Blur effect on modern Android (API 31+)
+            // Apply 30% Gaussian Blur effect on modern Android (API 31+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 binding.ivBannerBlur.setRenderEffect(
                     RenderEffect.createBlurEffect(
-                        35f, 35f, Shader.TileMode.CLAMP
+                        25f, 25f, Shader.TileMode.CLAMP
                     )
                 )
             }
