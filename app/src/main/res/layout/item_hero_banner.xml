@@ -7,104 +7,109 @@
     android:layout_height="match_parent"
     android:clipChildren="false">
 
-    <!-- 1. Layer Belakang (Layer Duplikat: Blur 30%, Opacity 70% Seamless Ambient Glow) -->
-    <com.donghuaz.ui.widget.FadingImageView
+    <!-- 1. Layer Belakang (Layer Duplikat: Blur 30%, Opacity 70% Ambient Glow) -->
+    <ImageView
         android:id="@+id/ivBannerBlur"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:alpha="0.70"
         android:importantForAccessibility="no"
         android:scaleType="centerCrop"
-        android:scaleX="1.08"
-        android:scaleY="1.08" />
+        android:scaleX="1.10"
+        android:scaleY="1.10" />
 
-    <!-- 2. Layer Depan (Foreground Crisp Poster with Seamless Hardware Fade) -->
-    <FrameLayout
+    <!-- 2. Layer Depan (Foreground Kotak CardView Berborder Melengkung 14dp) -->
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="6dp"
+        app:cardBackgroundColor="@color/card_bg"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="4dp">
 
-        <!-- Crisp Main Poster Image with 100% Seamless Bottom Fade -->
-        <com.donghuaz.ui.widget.FadingImageView
-            android:id="@+id/ivBanner"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop" />
+            android:layout_height="match_parent">
 
-        <!-- Bottom Gradient Overlay for Text Readability -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/bg_gradient_overlay" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:orientation="vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingBottom="24dp">
-
-            <TextView
-                android:id="@+id/tvBannerTitle"
+            <!-- Crisp Main Poster Image -->
+            <ImageView
+                android:id="@+id/ivBanner"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:shadowColor="#CC000000"
-                android:shadowDx="0"
-                android:shadowDy="2"
-                android:shadowRadius="6"
-                tools:text="Soul Land 2 The Peerless Tang Clan" />
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop" />
+
+            <!-- Bottom Gradient Overlay for Text Contrast (No Line) -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_gradient_overlay" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:layout_gravity="bottom"
+                android:orientation="vertical"
+                android:padding="14dp">
 
-                <!-- Top Rank Badge -->
                 <TextView
-                    android:id="@+id/tvBannerRank"
+                    android:id="@+id/tvBannerTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    tools:text="Soul Land 2 The Peerless Tang Clan" />
+
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_badge_gold"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="3dp"
-                    android:textColor="@color/background"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    tools:text="🔥 Top #1" />
+                    android:layout_marginTop="6dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <!-- Episode Badge (Gold Accent) -->
-                <TextView
-                    android:id="@+id/tvBannerEp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_badge_gold_dark"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="3dp"
-                    android:textColor="@color/accent_gold"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    tools:text="EP 168" />
+                    <!-- Top Rank Badge -->
+                    <TextView
+                        android:id="@+id/tvBannerRank"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_badge_gold"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
+                        android:textColor="@color/background"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        tools:text="🔥 Top #1" />
 
-                <!-- Rating Badge (Gold Accent) -->
-                <TextView
-                    android:id="@+id/tvBannerRating"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_badge_gold_dark"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="3dp"
-                    android:textColor="@color/accent_gold"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    tools:text="★ 9.5" />
+                    <!-- Episode Badge (Gold Accent) -->
+                    <TextView
+                        android:id="@+id/tvBannerEp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_badge_gold_dark"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
+                        android:textColor="@color/accent_gold"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        tools:text="EP 168" />
+
+                    <!-- Rating Badge (Gold Accent) -->
+                    <TextView
+                        android:id="@+id/tvBannerRating"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_badge_gold_dark"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
+                        android:textColor="@color/accent_gold"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        tools:text="★ 9.5" />
+                </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
-    </FrameLayout>
+        </FrameLayout>
+    </androidx.cardview.widget.CardView>
 </FrameLayout>
