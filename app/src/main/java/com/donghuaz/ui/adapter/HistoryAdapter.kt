@@ -36,20 +36,22 @@ class HistoryAdapter(
         fun bind(item: WatchHistoryItem) {
             binding.tvHistoryTitle.text = item.title
 
-            val currentMinutes = item.positionMs / 60000
-            val totalMinutes = item.durationMs / 60000
-            binding.tvHistoryEpisode.text = if (totalMinutes > 0) {
-                "${item.episodeName} (${currentMinutes}m / ${totalMinutes}m)"
+            val currentMins = item.positionMs / 60000
+            val currentSecs = (item.positionMs % 60000) / 1000
+            val totalMins = item.durationMs / 60000
+            val totalSecs = (item.durationMs % 60000) / 1000
+
+            val effectiveDuration = if (item.durationMs > 0L) item.durationMs else 1200000L
+            val progress = ((item.positionMs.toDouble() / effectiveDuration.toDouble()) * 100.0).toInt().coerceIn(1, 100)
+            binding.pbWatchProgress.progress = progress
+
+            binding.tvHistoryEpisode.text = if (item.durationMs > 0L) {
+                "${item.episodeName} • %02d:%02d / %02d:%02d".format(currentMins, currentSecs, totalMins, totalSecs)
+            } else if (item.positionMs > 1000L) {
+                "${item.episodeName} • Lanjut %02d:%02d".format(currentMins, currentSecs)
             } else {
                 item.episodeName
             }
-
-            val progress = if (item.durationMs > 0) {
-                ((item.positionMs.toDouble() / item.durationMs) * 100).toInt().coerceIn(0, 100)
-            } else {
-                0
-            }
-            binding.pbWatchProgress.progress = progress
 
             binding.ivHistoryPoster.loadPoster(item.poster)
 

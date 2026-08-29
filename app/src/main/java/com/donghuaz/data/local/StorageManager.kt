@@ -28,7 +28,17 @@ class StorageManager(context: Context) {
         durationMs: Long
     ) {
         val list = getHistory().toMutableList()
+        val oldItem = list.firstOrNull { it.animeId == animeId }
         list.removeAll { it.animeId == animeId }
+
+        val finalDuration = if (durationMs > 0L) {
+            durationMs
+        } else {
+            oldItem?.takeIf { it.durationMs > 0L }?.durationMs
+                ?: getEpisodeDuration(animeId, nid).takeIf { it > 0L }
+                ?: 0L
+        }
+
         val item = WatchHistoryItem(
             animeId,
             title,
@@ -37,7 +47,7 @@ class StorageManager(context: Context) {
             sid,
             nid,
             positionMs,
-            durationMs,
+            finalDuration,
             System.currentTimeMillis()
         )
         list.add(0, item) // Add to top
@@ -46,7 +56,7 @@ class StorageManager(context: Context) {
         prefs.edit()
             .putString(KEY_HISTORY, gson.toJson(list))
             .putLong("ep_pos_${animeId}_$nid", positionMs)
-            .putLong("ep_dur_${animeId}_$nid", durationMs)
+            .putLong("ep_dur_${animeId}_$nid", finalDuration)
             .apply()
 
         // Also mark episode as watched

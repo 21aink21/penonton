@@ -253,17 +253,22 @@ class HomeAdapter(
             items.forEach { item ->
                 val card = ItemContinueWatchingBinding.inflate(inflater, binding.llContinueWatchingCards, false)
                 card.ivCwPoster.loadPoster(item.poster)
-                card.tvCwTitle.text = item.title
                 val mins = item.positionMs / 60000
                 val secs = (item.positionMs % 60000) / 1000
-                if (item.durationMs > 0) {
-                    val progress = ((item.positionMs.toFloat() / item.durationMs) * 100).toInt().coerceIn(0, 100)
-                    card.pbCwProgress.progress = progress
-                } else {
-                    card.pbCwProgress.progress = 30
-                }
-                card.tvCwPosition.text = if (item.positionMs > 1000) "Lanjut %02d:%02d".format(mins, secs) else item.episodeName
+                val effectiveDuration = if (item.durationMs > 0L) item.durationMs else 1200000L
+                val progress = ((item.positionMs.toDouble() / effectiveDuration.toDouble()) * 100.0).toInt().coerceIn(1, 100)
+                card.pbCwProgress.progress = progress
                 card.pbCwProgress.visibility = View.VISIBLE
+
+                if (item.durationMs > 0L) {
+                    val totalMins = item.durationMs / 60000
+                    val totalSecs = (item.durationMs % 60000) / 1000
+                    card.tvCwPosition.text = "%02d:%02d / %02d:%02d".format(mins, secs, totalMins, totalSecs)
+                } else if (item.positionMs > 1000L) {
+                    card.tvCwPosition.text = "Lanjut %02d:%02d".format(mins, secs)
+                } else {
+                    card.tvCwPosition.text = item.episodeName
+                }
 
                 card.root.setOnClickListener {
                     ctx.startActivity(Intent(ctx, PlayerActivity::class.java).apply {
