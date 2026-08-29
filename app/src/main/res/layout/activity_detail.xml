@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="40dp">
+
+            <!-- ======================================================== -->
+            <!-- 1. Hero Header & Backdrop Poster (~400dp, Aspect ~3:4, Full-Bleed) -->
+            <!-- ======================================================== -->
+            <FrameLayout
+                android:id="@+id/playerContainer"
+                android:layout_width="match_parent"
+                android:layout_height="400dp"
+                android:background="@android:color/transparent">
+
+                <!-- Artwork Karakter / Backdrop Poster with Hardware Alpha Fade -->
+                <com.donghuaz.ui.widget.FadingImageView
+                    android:id="@+id/ivBackdrop"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop" />
+
+                <!-- Gradient Atas (Top Scrim: rgba(0,0,0,0.4) -> transparent, tinggi 60dp) -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_gravity="top"
+                    android:background="@drawable/gradient_top_scrim" />
+
+                <!-- Gradient Bawah (Bottom Scrim untuk keterbacaan teks judul) -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/gradient_bottom_scrim" />
+
+                <!-- Navigasi Atas (Top-Left: inset-top 42dp, inset-left 16dp, touch target 48x48dp, icon 24x24dp) -->
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="top|start"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="42dp">
+
+                    <ImageButton
+                        android:id="@+id/btnBack"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_back"
+                        app:tint="#FFFFFF" />
+                </FrameLayout>
+
+                <!-- Floating Bottom Title & Metadata Container (Seamless Overlay) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="12dp">
+
+                    <!-- Judul Mengambang (Ukuran Teks Lebih Besar: 32sp Bold, Putih Solid) -->
+                    <TextView
+                        android:id="@+id/tvDetailTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="#FFFFFF"
+                        android:textSize="32sp"
+                        android:textStyle="bold"
+                        android:lineSpacingMultiplier="1.12"
+                        android:shadowColor="#CC000000"
+                        android:shadowDx="0"
+                        android:shadowDy="2"
+                        android:shadowRadius="8"
+                        tools:text="Soul Land 2: The Peerless Tang Clan" />
+
+                    <!-- Metadata Baris Tunggal (Rating, Status Badge, Year • Country • Genre) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <!-- Rating (★ 9.8 gold) -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="★"
+                                android:textColor="#F59E0B"
+                                android:textSize="17sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvRatingDetail"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="3dp"
+                                android:text="9.8"
+                                android:textColor="#F59E0B"
+                                android:textSize="17sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Badge Episode Aktif (Chip Merah) -->
+                        <TextView
+                            android:id="@+id/tvDetailStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="28dp"
+                            android:layout_marginStart="10dp"
+                            android:background="@drawable/bg_badge_ep"
+                            android:gravity="center"
+                            android:paddingHorizontal="10dp"
+                            android:textColor="#FFFFFF"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            tools:text="EP97" />
+
+                        <!-- Informasi Tahun, Negara & Genre -->
+                        <TextView
+                            android:id="@+id/tvDetailMeta"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:textColor="#F1F5F9"
+                            android:textSize="15sp"
+                            tools:text="2025 • China • Action, Adventure, Fantasy" />
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
+
+            <!-- ======================================================== -->
+            <!-- 3. Action Toolbar (Grid Interaksi 4 Kolom Merata) -->
+            <!-- ======================================================== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="6dp"
+                android:orientation="horizontal">
+
+                <!-- 1. +Daftar Saya -->
+                <LinearLayout
+                    android:id="@+id/btnActionFavorite"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingVertical="4dp">
+
+                    <ImageView
+                        android:id="@+id/ivActionFavorite"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:src="@drawable/ic_favorite"
+                        app:tint="#CBD5E1" />
+
+                    <TextView
+                        android:id="@+id/tvActionFavorite"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="+Daftar Saya"
+                        android:textColor="#CBD5E1"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 2. Unduh -->
+                <LinearLayout
+                    android:id="@+id/btnActionDownload"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingVertical="4dp">
+
+                    <ImageView
+                        android:id="@+id/ivActionDownload"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:src="@drawable/ic_download"
+                        app:tint="#CBD5E1" />
+
+                    <TextView
+                        android:id="@+id/tvActionDownload"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Unduh"
+                        android:textColor="#CBD5E1"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 3. Bagikan -->
+                <LinearLayout
+                    android:id="@+id/btnActionShare"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingVertical="4dp">
+
+                    <ImageView
+                        android:id="@+id/ivActionShare"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:src="@drawable/ic_share"
+                        app:tint="#CBD5E1" />
+
+                    <TextView
+                        android:id="@+id/tvActionShare"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Bagikan"
+                        android:textColor="#CBD5E1"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 4. 1080P En / Kualitas -->
+                <LinearLayout
+                    android:id="@+id/btnActionQuality"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingVertical="4dp">
+
+                    <ImageView
+                        android:id="@+id/ivActionQuality"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:src="@drawable/ic_quality"
+                        app:tint="#CBD5E1" />
+
+                    <TextView
+                        android:id="@+id/tvActionQuality"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="1080P En"
+                        android:textColor="#CBD5E1"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ======================================================== -->
+            <!-- 4. Sinopsis Card Container -->
+            <!-- ======================================================== -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_synopsis_container"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Teks Deskripsi (15sp regular, line-height 1.45, #F1F5F9, max 3 lines) -->
+                    <TextView
+                        android:id="@+id/tvSynopsis"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="3"
+                        android:lineSpacingMultiplier="1.45"
+                        android:textColor="#F1F5F9"
+                        android:textSize="15sp"
+                        tools:text="Sinopsis cerita donghua disini..." />
+
+                    <!-- Ekspansi Teks: "Lihat Selengkapnya ▸" aksen oranye/kuning (#F59E0B, 15sp bold) -->
+                    <TextView
+                        android:id="@+id/btnToggleSynopsis"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Lihat Selengkapnya ▸"
+                        android:textColor="#F59E0B"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <!-- ======================================================== -->
+            <!-- 5. Tab Navigasi & Notice Alert -->
+            <!-- ======================================================== -->
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabDetail"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginHorizontal="16dp"
+                android:background="@android:color/transparent"
+                app:tabIndicatorColor="#E50914"
+                app:tabIndicatorHeight="3dp"
+                app:tabIndicatorFullWidth="false"
+                app:tabSelectedTextColor="#FFFFFF"
+                app:tabTextColor="#94A3B8"
+                app:tabTextAppearance="@style/TextAppearance.DetailTab">
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Episode" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Server / Kualitas" />
+            </com.google.android.material.tabs.TabLayout>
+
+            <!-- Notice Alert Banner (Full-pill, tinggi 42dp, border-radius 21dp) -->
+            <LinearLayout
+                android:id="@+id/layoutServerNotice"
+                android:layout_width="match_parent"
+                android:layout_height="42dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_notice_pill"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp">
+
+                <!-- Megaphone Icon 📢 (18sp) -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📢"
+                    android:textSize="18sp" />
+
+                <!-- Peringatan oranye-kuning (hanya server indo ganjiang yang aktif, font 14sp bold) -->
+                <TextView
+                    android:id="@+id/tvServerNotice"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="hanya server indo ganjiang yang aktif"
+                    android:textColor="#F59E0B"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- ======================================================== -->
+            <!-- 6. Server Selection Chips -->
+            <!-- ======================================================== -->
+            <LinearLayout
+                android:id="@+id/layoutServerSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="10dp">
+
+                <!-- Sub-Header (Pilih Server Pemutaran:, 16sp Bold, margin 16dp) -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="Pilih Server Pemutaran:"
+                    android:textColor="#F1F5F9"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <!-- Server Horizontal Container (Gap 8dp, Padding 16dp) -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvServers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    android:scrollbars="none"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    tools:listitem="@layout/item_server" />
+            </LinearLayout>
+
+            <!-- ======================================================== -->
+            <!-- 7. Episode Grid Selector (4 Kolom, Gap 8-10dp, Height 44dp, Radius 8dp) -->
+            <!-- ======================================================== -->
+            <LinearLayout
+                android:id="@+id/layoutEpisodeSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingTop="10dp">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvEpisodes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    tools:listitem="@layout/item_episode" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Center Loading Spinner -->
+    <ProgressBar
+        android:id="@+id/detailProgressBar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center"
+        android:indeterminateTint="@color/primary" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
