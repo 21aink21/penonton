@@ -1,31 +1,22 @@
 package com.donghuaz.util
 
 import android.app.Activity
-import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.ColorDrawable
 import android.view.View
 
 object GradientBackground {
 
-    // Diagonal from Top-Left to Bottom-Right (#121212 ➔ #1A1A1A)
-    private val COLORS = intArrayOf(
-        0xFF121212.toInt(),
-        0xFF141414.toInt(),
-        0xFF161616.toInt(),
-        0xFF181818.toInt(),
-        0xFF1A1A1A.toInt()
-    )
+    const val COLOR_BASE = 0xFF121212.toInt()
 
-    fun createDrawable(): GradientDrawable {
-        return GradientDrawable(GradientDrawable.Orientation.TL_BR, COLORS).apply {
-            gradientType = GradientDrawable.LINEAR_GRADIENT
-        }
+    fun createDrawable(): ColorDrawable {
+        return ColorDrawable(COLOR_BASE)
     }
 
     fun apply(activity: Activity) {
-        val gradient = createDrawable()
-        activity.window.decorView.background = gradient
-        activity.window.statusBarColor = 0xFF121212.toInt()
-        activity.window.navigationBarColor = 0xFF1A1A1A.toInt()
+        val bg = createDrawable()
+        activity.window.decorView.background = bg
+        activity.window.statusBarColor = COLOR_BASE
+        activity.window.navigationBarColor = COLOR_BASE
     }
 
     fun apply(view: View) {
