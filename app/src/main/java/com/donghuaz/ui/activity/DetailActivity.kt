@@ -128,7 +128,7 @@ class DetailActivity : AppCompatActivity() {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_SUBJECT, title)
-                putExtra(Intent.EXTRA_TEXT, "Tonton donghua $title di ErVanDongZ!")
+                putExtra(Intent.EXTRA_TEXT, "Tonton donghua $title di ERVANIME3d!")
             }
             startActivity(Intent.createChooser(shareIntent, "Bagikan ke:"))
         }

@@ -1,7 +1,7 @@
-# 🎬 ErVanDongZ - Modern Android Donghua Streaming App
+# 🎬 ERVANIME3d - Modern Android Donghua Streaming App
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/21aink21/donghua/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" height="96" alt="ErVanDongZ Logo" />
+  <img src="https://raw.githubusercontent.com/21aink21/donghua/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" height="96" alt="ERVANIME3d Logo" />
   <br>
   <b>Aplikasi Streaming Donghua Cepat, Ringan, dan Sinematik untuk Android</b>
   <br><br>
@@ -17,7 +17,7 @@
 
 ## 📥 Download APK Terbaru
 
-👉 **[Download ErVanDongZ v1.0.0 APK](https://github.com/21aink21/donghua/releases/download/v1.0.0/ErVanDongZ-v1.0.0.apk)** *(Ukuran: ~8.3 MB)*
+👉 **[Download ERVANIME3d v1.0.0 APK](https://github.com/21aink21/donghua/releases/download/v1.0.0/ERVANIME3d-v1.0.0.apk)** *(Ukuran: ~8.3 MB)*
 
 ---
 
