@@ -30,10 +30,30 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         GradientBackground.apply(this)
-
         setupFragments()
         setupBottomNav()
         setupSearch()
+        setupLogoStyle()
+    }
+
+    private fun setupLogoStyle() {
+        binding.tvLogo.post {
+            val text = binding.tvLogo.text.toString()
+            val textWidth = binding.tvLogo.paint.measureText(text)
+            if (textWidth > 0) {
+                val shader = android.graphics.LinearGradient(
+                    0f, 0f, textWidth, 0f,
+                    intArrayOf(
+                        0xFF0055FF.toInt(), // Electric Blue (Icon Dominant)
+                        0xFFFC6F01.toInt()  // Flame Orange (Icon Accent)
+                    ),
+                    floatArrayOf(0f, 1f),
+                    android.graphics.Shader.TileMode.CLAMP
+                )
+                binding.tvLogo.paint.shader = shader
+                binding.tvLogo.invalidate()
+            }
+        }
     }
 
     private fun setupFragments() {
