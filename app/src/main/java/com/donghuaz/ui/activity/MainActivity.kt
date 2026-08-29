@@ -7,7 +7,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import com.donghuaz.R
+import com.donghuaz.data.local.StorageManager
 import com.donghuaz.databinding.ActivityMainBinding
+import com.donghuaz.ui.dialog.BubbleSizeBottomSheet
 import com.donghuaz.ui.fragment.HomeFragment
 import com.donghuaz.ui.fragment.LibraryFragment
 import com.donghuaz.ui.fragment.RankingFragment
@@ -98,6 +100,18 @@ class MainActivity : AppCompatActivity() {
     private fun setupBottomNav() {
         binding.bottomNav.labelVisibilityMode = com.google.android.material.navigation.NavigationBarView.LABEL_VISIBILITY_SELECTED
 
+        val storage = StorageManager.getInstance(this)
+        applyBubbleSize(storage.getBubbleSize())
+
+        binding.btnBubbleSize.setOnClickListener {
+            showBubbleSizeDialog()
+        }
+
+        binding.bottomNavContainer.setOnLongClickListener {
+            showBubbleSizeDialog()
+            true
+        }
+
         binding.bottomNav.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             moveBubbleIndicator(currentNavIndex, animate = false)
         }
@@ -136,6 +150,24 @@ class MainActivity : AppCompatActivity() {
                 else -> false
             }
         }
+    }
+
+    private fun applyBubbleSize(sizeDp: Int) {
+        val density = resources.displayMetrics.density
+        val widthPx = (sizeDp * density).toInt()
+        val params = binding.vNavBubbleIndicator.layoutParams
+        params.width = widthPx
+        binding.vNavBubbleIndicator.layoutParams = params
+        binding.vNavBubbleIndicator.requestLayout()
+        binding.bottomNav.post {
+            moveBubbleIndicator(currentNavIndex, animate = false)
+        }
+    }
+
+    private fun showBubbleSizeDialog() {
+        BubbleSizeBottomSheet { newSize ->
+            applyBubbleSize(newSize)
+        }.show(supportFragmentManager, BubbleSizeBottomSheet.TAG)
     }
 
     private fun moveBubbleIndicator(index: Int, animate: Boolean) {

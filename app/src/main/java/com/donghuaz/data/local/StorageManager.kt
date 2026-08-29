@@ -113,7 +113,16 @@ class StorageManager(context: Context) {
         }
     }
 
+    fun getBubbleSize(): Int {
+        return prefs.getInt(KEY_BUBBLE_SIZE, 60)
+    }
+
+    fun setBubbleSize(sizeDp: Int) {
+        prefs.edit().putInt(KEY_BUBBLE_SIZE, sizeDp).apply()
+    }
+
     companion object {
+        private const val KEY_BUBBLE_SIZE = "key_bubble_size"
         private const val KEY_HISTORY = "key_watch_history"
         private const val KEY_FAVORITES = "key_favorites"
         private const val KEY_WATCHED_EPS = "key_watched_eps"

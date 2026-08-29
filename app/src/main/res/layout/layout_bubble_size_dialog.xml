@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_sheet_dialog"
+    android:padding="20dp">
+
+    <!-- Drag Handle Indicator -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="#4DFFFFFF" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Ukuran Bubble Navigation"
+            android:textColor="@color/text_primary"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvSizeValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="60 dp"
+            android:textColor="@color/accent_gold"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="16dp"
+        android:text="Geser slider untuk menyesuaikan lebar kapsul balon navigasi secara real-time"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
+
+    <!-- Material Slider for Bubble Size (40dp to 90dp) -->
+    <com.google.android.material.slider.Slider
+        android:id="@+id/sliderBubbleSize"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:valueFrom="40.0"
+        android:valueTo="90.0"
+        android:stepSize="1.0"
+        android:value="60.0"
+        app:thumbColor="@color/accent_gold"
+        app:trackColorActive="@color/accent_gold"
+        app:trackColorInactive="#33FFFFFF"
+        app:haloColor="#33FC6F01" />
+
+    <!-- Quick Preset Buttons (50dp, 60dp, 75dp) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnPresetSmall"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="50 dp"
+            android:textSize="12sp"
+            android:textColor="@color/text_primary"
+            android:backgroundTint="#262626" />
+
+        <Button
+            android:id="@+id/btnPresetDefault"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="4dp"
+            android:text="60 dp (Default)"
+            android:textSize="11sp"
+            android:textColor="@color/accent_gold"
+            android:backgroundTint="#262626" />
+
+        <Button
+            android:id="@+id/btnPresetLarge"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="75 dp"
+            android:textSize="12sp"
+            android:textColor="@color/text_primary"
+            android:backgroundTint="#262626" />
+    </LinearLayout>
+
+</LinearLayout>

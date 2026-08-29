@@ -107,6 +107,17 @@
                 android:textColor="#FC6F01"
                 android:textSize="23sp"
                 android:textStyle="bold" />
+
+            <!-- Bubble Size Slider Setting Button -->
+            <ImageView
+                android:id="@+id/btnBubbleSize"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Ukuran Bubble Navigation"
+                android:padding="6dp"
+                android:src="@drawable/ic_tune"
+                app:tint="@color/text_secondary" />
         </LinearLayout>
     </LinearLayout>
 
