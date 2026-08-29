@@ -7,16 +7,41 @@
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
 
-    <!-- Large Ambient Logo Watermark Overlay on Background (Alpha 0.40) -->
-    <ImageView
-        android:id="@+id/ivBackgroundWatermark"
-        android:layout_width="340dp"
-        android:layout_height="340dp"
+    <!-- Large Ambient Logo Watermark + Brand Text Lockup on Background (Alpha 0.40) -->
+    <LinearLayout
+        android:id="@+id/layoutBackgroundWatermark"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:alpha="0.40"
+        android:gravity="center"
         android:importantForAccessibility="no"
-        android:scaleType="fitCenter"
-        android:src="@mipmap/ic_launcher" />
+        android:orientation="vertical">
+
+        <!-- Watermark App Icon -->
+        <ImageView
+            android:id="@+id/ivBackgroundWatermark"
+            android:layout_width="260dp"
+            android:layout_height="260dp"
+            android:scaleType="fitCenter"
+            android:src="@mipmap/ic_launcher" />
+
+        <!-- Watermark Brand Text Logo Selaras 100% -->
+        <TextView
+            android:id="@+id/tvWatermarkText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:letterSpacing="0.08"
+            android:shadowColor="#CC000000"
+            android:shadowDx="0"
+            android:shadowDy="3"
+            android:shadowRadius="6"
+            android:text="ERVANIME3d"
+            android:textColor="#FC6F01"
+            android:textSize="32sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"

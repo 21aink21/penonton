@@ -58,9 +58,30 @@ class DetailActivity : AppCompatActivity() {
         setupTabs()
         setupAdapters()
         setupObservers()
+        setupWatermarkStyle()
 
         if (animeId > 0) {
             viewModel.loadDetail(animeId)
+        }
+    }
+
+    private fun setupWatermarkStyle() {
+        binding.tvWatermarkText.post {
+            val text = binding.tvWatermarkText.text.toString()
+            val textWidth = binding.tvWatermarkText.paint.measureText(text)
+            if (textWidth > 0) {
+                val shader = android.graphics.LinearGradient(
+                    0f, 0f, textWidth, 0f,
+                    intArrayOf(
+                        0xFF0055FF.toInt(), // Electric Blue (Icon Dominant)
+                        0xFFFC6F01.toInt()  // Flame Orange (Icon Accent)
+                    ),
+                    floatArrayOf(0f, 1f),
+                    android.graphics.Shader.TileMode.CLAMP
+                )
+                binding.tvWatermarkText.paint.shader = shader
+                binding.tvWatermarkText.invalidate()
+            }
         }
     }
 
