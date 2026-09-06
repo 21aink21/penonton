@@ -21,12 +21,12 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    private val homeFragment by lazy { HomeFragment() }
-    private val scheduleFragment by lazy { ScheduleFragment() }
+    private val seriesFragment by lazy { ScheduleFragment() }
+    private val moviesFragment by lazy { HomeFragment() }
     private val rankingFragment by lazy { RankingFragment() }
     private val libraryFragment by lazy { LibraryFragment() }
 
-    private var activeFragment: Fragment = homeFragment
+    private var activeFragment: Fragment = seriesFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,11 +88,11 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction()
             .add(R.id.fragmentContainer, libraryFragment, "library").hide(libraryFragment)
             .add(R.id.fragmentContainer, rankingFragment, "ranking").hide(rankingFragment)
-            .add(R.id.fragmentContainer, scheduleFragment, "schedule").hide(scheduleFragment)
-            .add(R.id.fragmentContainer, homeFragment, "home")
+            .add(R.id.fragmentContainer, moviesFragment, "movies").hide(moviesFragment)
+            .add(R.id.fragmentContainer, seriesFragment, "series")
             .commit()
 
-        activeFragment = homeFragment
+        activeFragment = seriesFragment
     }
 
     private var currentNavIndex = 0
@@ -118,8 +118,8 @@ class MainActivity : AppCompatActivity() {
 
         binding.bottomNav.setOnItemSelectedListener { item ->
             val targetIndex = when (item.itemId) {
-                R.id.nav_home -> 0
-                R.id.nav_schedule -> 1
+                R.id.nav_series -> 0
+                R.id.nav_movies -> 1
                 R.id.nav_ranking -> 2
                 R.id.nav_library -> 3
                 else -> -1
@@ -131,12 +131,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             when (item.itemId) {
-                R.id.nav_home -> {
-                    switchFragment(homeFragment)
+                R.id.nav_series -> {
+                    switchFragment(seriesFragment)
                     true
                 }
-                R.id.nav_schedule -> {
-                    switchFragment(scheduleFragment)
+                R.id.nav_movies -> {
+                    switchFragment(moviesFragment)
                     true
                 }
                 R.id.nav_ranking -> {
