@@ -6,8 +6,12 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Gravity
+import android.widget.LinearLayout
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.penonton.R
 import com.penonton.data.model.MovieItem
 import com.penonton.data.model.WatchHistoryItem
 import com.penonton.databinding.ItemMovieBinding
@@ -19,7 +23,6 @@ import com.penonton.databinding.ItemLoadingFooterBinding
 import com.penonton.ui.activity.PlayerActivity
 import com.penonton.util.CountryUtils
 import com.penonton.util.loadPoster
-import com.google.android.material.tabs.TabLayoutMediator
 
 class HomeAdapter(
     private val onAnimeClick: (MovieItem) -> Unit,
@@ -175,12 +178,12 @@ class HomeAdapter(
         init {
             binding.vpFeatured.adapter = bannerAdapter
             binding.vpFeatured.offscreenPageLimit = 3
-            TabLayoutMediator(binding.tabIndicator, binding.vpFeatured) { _, _ -> }.attach()
             binding.vpFeatured.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     if (position in banners.indices) {
                         onBannerSelected(banners[position].poster)
                     }
+                    updateActiveDot(position)
                     val rv = binding.vpFeatured.getChildAt(0) as? RecyclerView
                     val holder = rv?.findViewHolderForAdapterPosition(position) as? HeroBannerAdapter.BannerViewHolder
                     holder?.startZoomAnimation()
@@ -191,11 +194,66 @@ class HomeAdapter(
                 }
             })
         }
+
+        private fun setupDots(count: Int, activePos: Int) {
+            binding.layoutDotsIndicator.removeAllViews()
+            if (count <= 1) return
+
+            val ctx = binding.root.context
+            val density = ctx.resources.displayMetrics.density
+            val normalPx = (6 * density).toInt()
+            val activePx = (7 * density).toInt()
+            val marginPx = (3 * density).toInt()
+
+            for (i in 0 until count) {
+                val dot = View(ctx).apply {
+                    val size = if (i == activePos) activePx else normalPx
+                    val lp = LinearLayout.LayoutParams(size, size).apply {
+                        setMargins(marginPx, 0, marginPx, 0)
+                        gravity = Gravity.CENTER_VERTICAL
+                    }
+                    layoutParams = lp
+                    background = ContextCompat.getDrawable(
+                        ctx,
+                        if (i == activePos) R.drawable.dot_banner_active else R.drawable.dot_banner_inactive
+                    )
+                }
+                binding.layoutDotsIndicator.addView(dot)
+            }
+        }
+
+        private fun updateActiveDot(activePos: Int) {
+            val ctx = binding.root.context
+            val density = ctx.resources.displayMetrics.density
+            val normalPx = (6 * density).toInt()
+            val activePx = (7 * density).toInt()
+            val marginPx = (3 * density).toInt()
+
+            val total = binding.layoutDotsIndicator.childCount
+            for (i in 0 until total) {
+                val dot = binding.layoutDotsIndicator.getChildAt(i) ?: continue
+                val isActive = (i == activePos)
+                val size = if (isActive) activePx else normalPx
+                val lp = dot.layoutParams as? LinearLayout.LayoutParams ?: LinearLayout.LayoutParams(size, size)
+                lp.width = size
+                lp.height = size
+                lp.setMargins(marginPx, 0, marginPx, 0)
+                dot.layoutParams = lp
+                dot.background = ContextCompat.getDrawable(
+                    ctx,
+                    if (isActive) R.drawable.dot_banner_active else R.drawable.dot_banner_inactive
+                )
+            }
+        }
+
         fun bind(items: List<MovieItem>) {
             bannerAdapter.submitList(items)
             if (items.isNotEmpty()) {
                 val cur = binding.vpFeatured.currentItem.coerceIn(0, items.size - 1)
                 onBannerSelected(items[cur].poster)
+                setupDots(items.size, cur)
+            } else {
+                binding.layoutDotsIndicator.removeAllViews()
             }
             startAutoSlide()
         }
