@@ -272,23 +272,29 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun bindDetail(detail: AnimeDetail) {
+        val isMovie = detail.status.equals("Movie", ignoreCase = true) || (detail.servers.size == 1 && detail.servers[0].count == 1)
         binding.tvDetailTitle.text = detail.title
-        binding.tvDetailStatus.text = detail.status.ifEmpty { "On Going" }
+        binding.tvDetailStatus.text = if (isMovie) "Movie HD" else detail.status.ifEmpty { "Series" }
         binding.tvSynopsis.text = detail.synopsis.ifEmpty { "Belum ada deskripsi tersedia." }
 
-        val ratingStr = detail.meta["score"] ?: detail.meta["rating"] ?: "9.8"
+        // Adjust Tab Titles
+        binding.tabDetail.getTabAt(0)?.text = if (isMovie) "Putar Film" else "Episode"
+        binding.tabDetail.getTabAt(1)?.text = if (isMovie) "Server Player" else "Season"
+
+        val ratingStr = detail.meta["score"] ?: detail.meta["rating"] ?: "9.0"
         binding.tvRatingDetail.text = ratingStr.replace("★", "").trim()
 
         val metaParts = mutableListOf<String>()
         detail.meta["year"]?.let { metaParts.add(it) }
+        detail.meta["country"]?.let { metaParts.add(it) }
         detail.meta["region"]?.let { metaParts.add(it) }
         detail.meta["genre"]?.let { metaParts.add(it) }
-        detail.meta["type"]?.let { if (!metaParts.contains(it)) metaParts.add(it) }
+        detail.meta["duration"]?.let { metaParts.add(it) }
         
         binding.tvDetailMeta.text = if (metaParts.isNotEmpty()) {
             metaParts.joinToString(" • ")
         } else {
-            "2025 • China • Action, Adventure, Fantasy"
+            if (isMovie) "2026 • Movie • HD Sub Indo" else "2026 • Series • Sub Indo"
         }
 
         binding.ivBackdrop.loadPoster(detail.poster)

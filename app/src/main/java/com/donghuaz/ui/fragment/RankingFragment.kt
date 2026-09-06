@@ -31,6 +31,8 @@ class RankingFragment : Fragment() {
         return binding.root
     }
 
+    private var currentType: String = "movie"
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -50,10 +52,27 @@ class RankingFragment : Fragment() {
             setItemViewCacheSize(25)
         }
 
+        setupTabs()
+
         binding.swipeRefreshRanking.setColorSchemeResources(R.color.primary)
         binding.swipeRefreshRanking.setOnRefreshListener { loadRankings(forceRefresh = true) }
 
         loadRankings(forceRefresh = false)
+    }
+
+    private fun setupTabs() {
+        binding.tabRankingType.removeAllTabs()
+        binding.tabRankingType.addTab(binding.tabRankingType.newTab().setText("🎬 Top Movies"))
+        binding.tabRankingType.addTab(binding.tabRankingType.newTab().setText("📺 Top Series"))
+
+        binding.tabRankingType.addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab?) {
+                currentType = if (tab?.position == 1) "series" else "movie"
+                loadRankings(forceRefresh = false)
+            }
+            override fun onTabUnselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
+            override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
+        })
     }
 
     private fun loadRankings(forceRefresh: Boolean = false) {
@@ -65,7 +84,7 @@ class RankingFragment : Fragment() {
 
         lifecycleScope.launch {
             try {
-                val rankings = DonghuaParser.getRankings(forceRefresh)
+                val rankings = DonghuaParser.getRankings(forceRefresh, currentType)
                 rankingAdapter.submitList(rankings)
             } catch (_: Exception) {
             } finally {

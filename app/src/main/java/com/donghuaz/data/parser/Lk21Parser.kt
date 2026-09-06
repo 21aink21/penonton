@@ -202,27 +202,39 @@ object Lk21Parser {
     }
 
     // =========================================================================
-    // 4. RANKINGS / POPULER MOVIES
+    // 4. RANKINGS (TOP MOVIES & TOP SERIES)
     // =========================================================================
-    suspend fun getRankings(forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+    suspend fun getRankings(forceRefresh: Boolean = false, type: String = "movie"): List<AnimeItem> = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
-        if (!forceRefresh && cachedRankings != null && (now - cachedRankings!!.first) < CACHE_EXPIRY_MS) {
-            return@withContext cachedRankings!!.second
-        }
+        if (type == "movie") {
+            if (!forceRefresh && cachedRankings != null && (now - cachedRankings!!.first) < CACHE_EXPIRY_MS) {
+                return@withContext cachedRankings!!.second
+            }
+            val url = "$MOVIE_BASE/populer/page/1"
+            val html = fetchHtml(url)
+            val doc = Jsoup.parse(html)
+            val items = mutableListOf<AnimeItem>()
 
-        val url = "$MOVIE_BASE/populer/page/1"
-        val html = fetchHtml(url)
-        val doc = Jsoup.parse(html)
-        val items = mutableListOf<AnimeItem>()
+            for (card in doc.select("article")) {
+                parseCard(card, MOVIE_BASE)?.let { items.add(it) }
+            }
 
-        for (card in doc.select("article")) {
-            parseCard(card, MOVIE_BASE)?.let { items.add(it) }
-        }
+            if (items.isNotEmpty()) {
+                cachedRankings = Pair(now, items)
+            }
+            items
+        } else {
+            // Series Popular / Top Series
+            val url = "$SERIES_BASE/top-series-today/page/1"
+            val html = fetchHtml(url)
+            val doc = Jsoup.parse(html)
+            val items = mutableListOf<AnimeItem>()
 
-        if (items.isNotEmpty()) {
-            cachedRankings = Pair(now, items)
+            for (card in doc.select("article")) {
+                parseCard(card, SERIES_BASE)?.let { items.add(it) }
+            }
+            items
         }
-        items
     }
 
     // =========================================================================

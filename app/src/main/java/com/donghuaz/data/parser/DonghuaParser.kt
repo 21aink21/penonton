@@ -186,9 +186,9 @@ object DonghuaParser {
         schedules
     }
 
-    suspend fun getRankings(forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+    suspend fun getRankings(forceRefresh: Boolean = false, type: String = "movie"): List<AnimeItem> = withContext(Dispatchers.IO) {
         try {
-            val results = Lk21Parser.getRankings(forceRefresh)
+            val results = Lk21Parser.getRankings(forceRefresh, type)
             if (results.isNotEmpty()) return@withContext results
         } catch (_: Exception) {}
 

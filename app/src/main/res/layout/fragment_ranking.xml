@@ -13,6 +13,19 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <!-- Movie vs Series Toggle Tabs -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabRankingType"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@color/surface"
+            app:tabIndicatorColor="@color/primary"
+            app:tabIndicatorHeight="3dp"
+            app:tabMode="fixed"
+            app:tabGravity="fill"
+            app:tabSelectedTextColor="@color/primary"
+            app:tabTextColor="@color/text_secondary" />
+
         <!-- Shimmer -->
         <com.facebook.shimmer.ShimmerFrameLayout
             android:id="@+id/shimmerRanking"
