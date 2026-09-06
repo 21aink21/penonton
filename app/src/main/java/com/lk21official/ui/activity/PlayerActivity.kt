@@ -69,10 +69,13 @@ class PlayerActivity : AppCompatActivity() {
     private var isLeftSwipe = false
     private var isHorizontalSwipe = false
     private var isVerticalSwipe = false
+    private var isScaling = false
+    private var currentScaleFactor = 1.0f
     private var initialPositionMs = 0L
     private var targetSeekPositionMs = 0L
     private var videoDurationMs = 0L
     private var gestureDetector: GestureDetector? = null
+    private var scaleGestureDetector: ScaleGestureDetector? = null
 
     // 2X Speed Press & Hold variables
     private var isFastForwarding = false
@@ -156,10 +159,13 @@ class PlayerActivity : AppCompatActivity() {
             }
         })
 
-        // 1. Aspect Ratio Toggle
+        // 1. Aspect Ratio Toggle (Resets manual zoom)
         binding.btnAspectRatio.setOnClickListener {
             currentAspectRatioIdx = (currentAspectRatioIdx + 1) % aspectRatios.size
             val (mode, label) = aspectRatios[currentAspectRatioIdx]
+            currentScaleFactor = 1.0f
+            binding.playerView.scaleX = 1.0f
+            binding.playerView.scaleY = 1.0f
             binding.playerView.resizeMode = mode
             showHud(R.drawable.ic_aspect_ratio, label)
         }
@@ -259,7 +265,7 @@ class PlayerActivity : AppCompatActivity() {
             }
 
             override fun onLongPress(e: MotionEvent) {
-                if (isScreenLocked || isHorizontalSwipe || isVerticalSwipe) return
+                if (isScreenLocked || isHorizontalSwipe || isVerticalSwipe || isScaling) return
                 exoPlayer?.let { player ->
                     if (player.isPlaying) {
                         isFastForwarding = true
@@ -269,6 +275,34 @@ class PlayerActivity : AppCompatActivity() {
                         showHud(R.drawable.ic_speed, "2X Speed ⏩\n(Tahan Layar)", autoHide = false)
                     }
                 }
+            }
+        })
+
+        // Pinch-to-zoom ScaleGestureDetector (Zoom-in & Zoom-out Manual)
+        scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+                isScaling = true
+                isHorizontalSwipe = false
+                isVerticalSwipe = false
+                return true
+            }
+
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                if (isScreenLocked) return false
+                val factor = detector.scaleFactor
+                currentScaleFactor = (currentScaleFactor * factor).coerceIn(0.70f, 3.50f)
+                binding.playerView.scaleX = currentScaleFactor
+                binding.playerView.scaleY = currentScaleFactor
+
+                val percent = (currentScaleFactor * 100).toInt()
+                showHud(R.drawable.ic_aspect_ratio, "Zoom: ${percent}%", autoHide = false)
+                return true
+            }
+
+            override fun onScaleEnd(detector: ScaleGestureDetector) {
+                isScaling = false
+                hudHandler.removeCallbacks(hideHudRunnable)
+                hudHandler.postDelayed(hideHudRunnable, 1000)
             }
         })
     }
@@ -286,6 +320,14 @@ class PlayerActivity : AppCompatActivity() {
             return true
         }
 
+        // Multi-touch 2-Finger Pinch Zoom-in & Zoom-out
+        if (ev.pointerCount >= 2) {
+            isHorizontalSwipe = false
+            isVerticalSwipe = false
+            scaleGestureDetector?.onTouchEvent(ev)
+            return true
+        }
+
         val handledByDetector = gestureDetector?.onTouchEvent(ev) ?: false
 
         val screenWidth = binding.playerRoot.width.toFloat().coerceAtLeast(1f)
@@ -298,12 +340,13 @@ class PlayerActivity : AppCompatActivity() {
                 isLeftSwipe = ev.rawX < (screenWidth / 2f)
                 isHorizontalSwipe = false
                 isVerticalSwipe = false
+                isScaling = false
                 initialPositionMs = exoPlayer?.currentPosition ?: 0L
                 videoDurationMs = exoPlayer?.duration?.coerceAtLeast(1L) ?: 1L
                 targetSeekPositionMs = initialPositionMs
             }
             MotionEvent.ACTION_MOVE -> {
-                if (!isFastForwarding) {
+                if (!isFastForwarding && !isScaling) {
                     val deltaX = ev.rawX - initialTouchX
                     val deltaY = ev.rawY - initialTouchY
 
@@ -345,6 +388,7 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                isScaling = false
                 if (isFastForwarding) {
                     exoPlayer?.playbackParameters = PlaybackParameters(previousPlaybackSpeed)
                     isFastForwarding = false
@@ -368,7 +412,7 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
-        if (handledByDetector || isHorizontalSwipe || isVerticalSwipe) {
+        if (handledByDetector || isHorizontalSwipe || isVerticalSwipe || isScaling) {
             return true
         }
 
