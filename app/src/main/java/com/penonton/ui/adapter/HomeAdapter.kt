@@ -203,7 +203,7 @@ class HomeAdapter(
             val density = ctx.resources.displayMetrics.density
             val normalPx = (6 * density).toInt()
             val activePx = (7 * density).toInt()
-            val marginPx = (3 * density).toInt()
+            val marginPx = (1.5f * density).toInt().coerceAtLeast(1)
 
             for (i in 0 until count) {
                 val dot = View(ctx).apply {
@@ -227,7 +227,7 @@ class HomeAdapter(
             val density = ctx.resources.displayMetrics.density
             val normalPx = (6 * density).toInt()
             val activePx = (7 * density).toInt()
-            val marginPx = (3 * density).toInt()
+            val marginPx = (1.5f * density).toInt().coerceAtLeast(1)
 
             val total = binding.layoutDotsIndicator.childCount
             for (i in 0 until total) {
