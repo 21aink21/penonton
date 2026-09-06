@@ -77,22 +77,15 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <!-- App Logo Icon (Translucent Card with 8dp radius, no hard shadow) -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="34dp"
-                android:layout_height="34dp"
+            <!-- App Logo Icon (Seamless Floating Logo without background/border) -->
+            <ImageView
+                android:id="@+id/ivHeaderAppIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:layout_marginEnd="10dp"
-                app:cardBackgroundColor="@android:color/transparent"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp">
-
-                <ImageView
-                    android:id="@+id/ivHeaderAppIcon"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:src="@mipmap/ic_launcher" />
-            </androidx.cardview.widget.CardView>
+                android:background="@android:color/transparent"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_app_logo" />
 
             <TextView
                 android:id="@+id/tvLogo"
