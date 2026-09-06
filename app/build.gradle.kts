@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.donghuaz"
+    namespace = "com.lk21official"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.donghuaz"
+        applicationId = "com.lk21official"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

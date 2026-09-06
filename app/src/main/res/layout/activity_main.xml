@@ -7,7 +7,7 @@
     android:background="@android:color/transparent">
 
     <!-- Top-to-Search Dynamic Ambient Backdrop (Duplicate Layer with 30% Blur & 70% Opacity fading to Search Box) -->
-    <com.donghuaz.ui.widget.FadingImageView
+    <com.lk21official.ui.widget.FadingImageView
         android:id="@+id/ivDynamicHomeBackdrop"
         android:layout_width="match_parent"
         android:layout_height="440dp"
