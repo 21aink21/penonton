@@ -109,6 +109,7 @@ class HomeFragment : Fragment() {
             putExtra("ANIME_ID", anime.id)
             putExtra("ANIME_TITLE", anime.title)
             putExtra("ANIME_POSTER", anime.poster)
+            putExtra("ANIME_URL", anime.url)
         })
     }
 

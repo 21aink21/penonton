@@ -334,23 +334,35 @@ object Lk21Parser {
         schedules
     }
 
+    fun registerUrl(id: Int, url: String) {
+        if (url.isNotEmpty()) {
+            idToUrlMap[id] = url
+        }
+    }
+
     // =========================================================================
     // 6. DETAIL PAGE (MOVIE & SERIES)
     // =========================================================================
-    suspend fun getDetails(itemId: Int, forceRefresh: Boolean = false): AnimeDetail = withContext(Dispatchers.IO) {
+    suspend fun getDetails(itemId: Int, fallbackUrl: String? = null, forceRefresh: Boolean = false): AnimeDetail = withContext(Dispatchers.IO) {
+        if (!fallbackUrl.isNullOrEmpty()) {
+            idToUrlMap[itemId] = fallbackUrl
+        }
         if (!forceRefresh) {
             val cached = detailCache.get(itemId)
             if (cached != null) return@withContext cached
         }
 
-        var pageUrl = idToUrlMap[itemId] ?: ""
+        var pageUrl = fallbackUrl?.takeIf { it.isNotEmpty() } ?: idToUrlMap[itemId] ?: ""
         if (pageUrl.isEmpty()) {
             pageUrl = "$MOVIE_BASE/"
+        }
+        if (pageUrl.startsWith("/")) {
+            pageUrl = if (pageUrl.contains("series") || pageUrl.contains("season") || pageUrl.contains("episode")) "$SERIES_BASE$pageUrl" else "$MOVIE_BASE$pageUrl"
         }
 
         val html = fetchHtml(pageUrl)
         val doc = Jsoup.parse(html)
-        val isSeries = pageUrl.contains("nontondrama") || doc.selectFirst("script#season-data") != null
+        val isSeries = pageUrl.contains("nontondrama") || doc.selectFirst("script#season-data") != null || doc.selectFirst("a[href*=-episode-]") != null
 
         val title = doc.selectFirst("h1")?.text()?.ifEmpty { null }
             ?: doc.title().substringBefore(" - ").trim()
@@ -390,7 +402,7 @@ object Lk21Parser {
                             val epSlug = epObj.get("slug")?.asString ?: continue
                             val epNo = epObj.get("episode_no")?.asInt ?: (idx + 1)
                             val epTitle = epObj.get("title")?.asString ?: "Episode $epNo"
-                            val epUrl = "$SERIES_BASE/$epSlug"
+                            val epUrl = if (epSlug.startsWith("http")) epSlug else "$SERIES_BASE/$epSlug"
                             val epId = epSlug.hashCode()
                             idToUrlMap[epId] = epUrl
 
@@ -405,10 +417,48 @@ object Lk21Parser {
                                 )
                             )
                         }
-                        servers.add(ServerGroup("Season $seasonKey", episodeList.size, episodeList))
+                        if (episodeList.isNotEmpty()) {
+                            servers.add(ServerGroup("Season $seasonKey", episodeList.size, episodeList))
+                        }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                }
+            }
+
+            // Fallback: parse direct episode links in page if season-data JSON was empty
+            if (servers.isEmpty()) {
+                val epLinks = doc.select("a[href*=-episode-], a[href*=-season-]")
+                val episodeList = mutableListOf<EpisodeItem>()
+                val seenUrls = HashSet<String>()
+
+                for ((idx, a) in epLinks.withIndex()) {
+                    val href = a.attr("href")
+                    if (href.isEmpty() || href == "#" || seenUrls.contains(href)) continue
+                    seenUrls.add(href)
+
+                    val epUrl = if (href.startsWith("http")) href else "$SERIES_BASE/$href"
+                    val epSlug = href.removePrefix("/")
+                    val epId = epSlug.hashCode()
+                    idToUrlMap[epId] = epUrl
+
+                    val numMatcher = Pattern.compile("episode-(\\d+)", Pattern.CASE_INSENSITIVE).matcher(href)
+                    val epNo = if (numMatcher.find()) numMatcher.group(1)?.toIntOrNull() ?: (idx + 1) else (idx + 1)
+
+                    episodeList.add(
+                        EpisodeItem(
+                            episode = "Eps $epNo",
+                            id = epId,
+                            sid = 1,
+                            nid = epNo,
+                            playUrl = epUrl,
+                            path = epSlug
+                        )
+                    )
+                }
+
+                if (episodeList.isNotEmpty()) {
+                    servers.add(ServerGroup("Season 1", episodeList.size, episodeList.sortedBy { it.nid }))
                 }
             }
         }
@@ -424,6 +474,7 @@ object Lk21Parser {
                 path = pageUrl.substringAfterLast("/")
             )
             servers.add(ServerGroup("Server HD", 1, listOf(epItem)))
+            idToUrlMap[itemId] = pageUrl
         }
 
         val detail = AnimeDetail(itemId, title, if (isSeries) "Series" else "Movie", poster, synopsis, meta, servers)
@@ -434,22 +485,67 @@ object Lk21Parser {
     // =========================================================================
     // 7. STREAM EXTRACTION (VIDEONODE -> PLAYCDN -> DIRECT HLS)
     // =========================================================================
-    suspend fun getStream(animeId: Int, sid: Int = 1, nid: Int = 1): StreamResult = withContext(Dispatchers.IO) {
-        val playUrl = idToUrlMap[animeId] ?: ""
+    suspend fun getStream(animeId: Int, sid: Int = 1, nid: Int = 1, fallbackUrl: String? = null): StreamResult = withContext(Dispatchers.IO) {
+        var playUrl = fallbackUrl?.takeIf { it.isNotEmpty() } ?: idToUrlMap[animeId] ?: ""
+        if (playUrl.isEmpty()) {
+            val cachedDetail = detailCache.get(animeId)
+            if (cachedDetail != null) {
+                val ep = cachedDetail.servers.flatMap { it.episodes }.firstOrNull { it.nid == nid && it.sid == sid }
+                    ?: cachedDetail.servers.firstOrNull()?.episodes?.firstOrNull()
+                if (ep != null && ep.playUrl.isNotEmpty()) {
+                    playUrl = ep.playUrl
+                }
+            }
+        }
         if (playUrl.isEmpty()) {
             throw Exception("URL video tidak ditemukan")
+        }
+        if (playUrl.startsWith("/")) {
+            playUrl = if (playUrl.contains("episode") || playUrl.contains("season")) "$SERIES_BASE$playUrl" else "$MOVIE_BASE$playUrl"
         }
 
         val htmlPage = fetchHtml(playUrl)
         val doc = Jsoup.parse(htmlPage)
-        val vnodeIframe = doc.selectFirst("iframe#main-player")?.attr("src")
-            ?: throw Exception("Iframe player tidak ditemukan pada halaman ini")
+        var vnodeIframe = doc.selectFirst("iframe#main-player")?.attr("src")
+            ?: doc.selectFirst("iframe[src*=videonode]")?.attr("src")
+            ?: doc.selectFirst("iframe[src*=playcdn]")?.attr("src")
+            ?: doc.selectFirst("iframe[src*=/iframe/]")?.attr("src")
+            ?: doc.selectFirst("iframe[src*=/iframe3/]")?.attr("src")
+
+        if (vnodeIframe.isNullOrEmpty()) {
+            val iframeM = Pattern.compile("<iframe[^>]+src=[\"']([^\"']*(?:videonode|playcdn|player|embed)[^\"']*)[\"']", Pattern.CASE_INSENSITIVE).matcher(htmlPage)
+            if (iframeM.find()) {
+                vnodeIframe = iframeM.group(1)
+            }
+        }
+
+        if (vnodeIframe.isNullOrEmpty()) {
+            throw Exception("Iframe player video tidak ditemukan pada halaman ini")
+        }
+
+        if (vnodeIframe.startsWith("/")) {
+            vnodeIframe = "https://videonode.de$vnodeIframe"
+        }
 
         // 1. Fetch videonode iframe
         val vnodeHtml = fetchHtml(vnodeIframe, referer = playUrl)
         val vnodeDoc = Jsoup.parse(vnodeHtml)
-        val playcdnIframe = vnodeDoc.selectFirst("iframe")?.attr("src")?.replace("&amp;", "&")
-            ?: throw Exception("Iframe PlayCDN tidak ditemukan")
+        var playcdnIframe = vnodeDoc.selectFirst("iframe")?.attr("src")?.replace("&amp;", "&")
+
+        if (playcdnIframe.isNullOrEmpty()) {
+            val playM = Pattern.compile("<iframe[^>]+src=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE).matcher(vnodeHtml)
+            if (playM.find()) {
+                playcdnIframe = playM.group(1)?.replace("&amp;", "&")
+            }
+        }
+
+        if (playcdnIframe.isNullOrEmpty()) {
+            throw Exception("Iframe PlayCDN tidak ditemukan")
+        }
+
+        if (playcdnIframe.startsWith("/")) {
+            playcdnIframe = "https://playcdn.de$playcdnIframe"
+        }
 
         // 2. Fetch playcdn video.php to get token
         val playcdnHtml = fetchHtml(playcdnIframe, referer = vnodeIframe)

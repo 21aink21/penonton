@@ -44,10 +44,16 @@ class DetailActivity : AppCompatActivity() {
         animeId = intent.getIntExtra("ANIME_ID", 0)
         val initialTitle = intent.getStringExtra("ANIME_TITLE") ?: ""
         val initialPoster = intent.getStringExtra("ANIME_POSTER") ?: ""
+        val initialUrl = intent.getStringExtra("ANIME_URL") ?: ""
 
         if (initialTitle.isNotEmpty()) binding.tvDetailTitle.text = initialTitle
         if (initialPoster.isNotEmpty()) {
             binding.ivBackdrop.loadPoster(initialPoster)
+        }
+
+        if (initialUrl.isNotEmpty()) {
+            com.lk21official.data.parser.Lk21Parser.registerUrl(animeId, initialUrl)
+            com.lk21official.data.parser.DonghuaParser.registerUrl(animeId, initialUrl)
         }
 
         binding.btnBack.setOnClickListener { finish() }
@@ -60,8 +66,8 @@ class DetailActivity : AppCompatActivity() {
         setupObservers()
         setupWatermarkStyle()
 
-        if (animeId > 0) {
-            viewModel.loadDetail(animeId)
+        if (animeId > 0 || initialUrl.isNotEmpty()) {
+            viewModel.loadDetail(animeId, initialUrl)
         }
     }
 
@@ -98,12 +104,13 @@ class DetailActivity : AppCompatActivity() {
                 ?: currentDetail?.servers?.firstOrNull()?.episodes?.firstOrNull()
 
             val episodeToPlay = if (lastWatched != null) {
+                val matchedEp = currentDetail?.servers?.flatMap { it.episodes }?.firstOrNull { it.nid == lastWatched.nid }
                 EpisodeItem(
                     episode = lastWatched.episodeName,
                     id = lastWatched.animeId,
                     sid = lastWatched.sid,
                     nid = lastWatched.nid,
-                    playUrl = "",
+                    playUrl = matchedEp?.playUrl ?: firstEpisode?.playUrl ?: intent.getStringExtra("ANIME_URL") ?: "",
                     path = ""
                 )
             } else {
@@ -130,7 +137,7 @@ class DetailActivity : AppCompatActivity() {
                 latestEp = currentDetail?.status ?: "",
                 rating = "",
                 poster = currentDetail?.poster ?: intent.getStringExtra("ANIME_POSTER") ?: "",
-                url = ""
+                url = intent.getStringExtra("ANIME_URL") ?: ""
             )
             val isAdded = storage.toggleFavorite(item)
             updateFavoriteButtonState()
@@ -140,16 +147,16 @@ class DetailActivity : AppCompatActivity() {
 
         // 2. Unduh
         binding.btnActionDownload.setOnClickListener {
-            Toast.makeText(this, "Episode tersimpan di cache untuk pemutaran instan!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Film/Episode tersimpan di cache untuk pemutaran instan!", Toast.LENGTH_SHORT).show()
         }
 
         // 3. Bagikan
         binding.btnActionShare.setOnClickListener {
-            val title = currentDetail?.title ?: "Donghua"
+            val title = currentDetail?.title ?: "LK21 Movie & Series"
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_SUBJECT, title)
-                putExtra(Intent.EXTRA_TEXT, "Tonton donghua $title di ERVANIME3d!")
+                putExtra(Intent.EXTRA_TEXT, "Tonton film & series $title di LK21!")
             }
             startActivity(Intent.createChooser(shareIntent, "Bagikan ke:"))
         }
@@ -243,6 +250,8 @@ class DetailActivity : AppCompatActivity() {
             putExtra("EPISODE_NAME", episode.episode)
             putExtra("SID", episode.sid)
             putExtra("NID", episode.nid)
+            putExtra("PLAY_URL", episode.playUrl)
+            putExtra("ANIME_URL", episode.playUrl)
             if (startPos > 1000L) {
                 putExtra("START_POSITION", startPos)
             }
@@ -272,7 +281,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun bindDetail(detail: AnimeDetail) {
-        val isMovie = detail.status.equals("Movie", ignoreCase = true) || (detail.servers.size == 1 && detail.servers[0].count == 1)
+        val isMovie = detail.status.equals("Movie", ignoreCase = true) || (detail.servers.size <= 1 && (detail.servers.firstOrNull()?.count ?: 0) <= 1)
         binding.tvDetailTitle.text = detail.title
         binding.tvDetailStatus.text = if (isMovie) "Movie HD" else detail.status.ifEmpty { "Series" }
         binding.tvSynopsis.text = detail.synopsis.ifEmpty { "Belum ada deskripsi tersedia." }
@@ -298,6 +307,9 @@ class DetailActivity : AppCompatActivity() {
         }
 
         binding.ivBackdrop.loadPoster(detail.poster)
+
+        // Set layout manager: 1 full-width column for movie, 4 columns for series episodes
+        binding.rvEpisodes.layoutManager = GridLayoutManager(this, if (isMovie) 1 else 4)
 
         val watchedSet = storage.getWatchedEpisodes(animeId)
         val lastWatched = storage.getLastWatched(animeId)

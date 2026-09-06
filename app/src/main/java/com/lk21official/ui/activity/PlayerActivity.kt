@@ -328,13 +328,14 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun loadStream() {
         binding.playerProgressBar.visibility = View.VISIBLE
+        val playUrl = intent.getStringExtra("PLAY_URL") ?: intent.getStringExtra("ANIME_URL")
 
         lifecycleScope.launch {
             try {
                 val stream = try {
-                    com.lk21official.data.parser.Lk21Parser.getStream(animeId, currentSid, currentNid)
+                    com.lk21official.data.parser.Lk21Parser.getStream(animeId, currentSid, currentNid, playUrl)
                 } catch (_: Exception) {
-                    DonghuaParser.getStream(animeId, currentSid, currentNid)
+                    DonghuaParser.getStream(animeId, currentSid, currentNid, playUrl)
                 }
                 binding.playerProgressBar.visibility = View.GONE
 

@@ -229,9 +229,13 @@ object DonghuaParser {
         results
     }
 
-    suspend fun getDetails(animeId: Int, forceRefresh: Boolean = false): AnimeDetail = withContext(Dispatchers.IO) {
+    fun registerUrl(id: Int, url: String) {
+        Lk21Parser.registerUrl(id, url)
+    }
+
+    suspend fun getDetails(animeId: Int, url: String? = null, forceRefresh: Boolean = false): AnimeDetail = withContext(Dispatchers.IO) {
         try {
-            return@withContext Lk21Parser.getDetails(animeId, forceRefresh)
+            return@withContext Lk21Parser.getDetails(animeId, url, forceRefresh)
         } catch (_: Exception) {}
 
         if (!forceRefresh) {
@@ -239,8 +243,8 @@ object DonghuaParser {
             if (cached != null) return@withContext cached
         }
 
-        val url = "$BASE_URL/index.php/vod/detail/id/$animeId.html"
-        val html = fetchHtml(url)
+        val pageUrl = url ?: "$BASE_URL/index.php/vod/detail/id/$animeId.html"
+        val html = fetchHtml(pageUrl)
         val doc = Jsoup.parse(html)
 
         val title = doc.selectFirst("li:has(em:contains(Title)) span")?.text()
@@ -304,8 +308,12 @@ object DonghuaParser {
         detail
     }
 
-    suspend fun getStream(animeId: Int, sid: Int = 1, nid: Int = 1): StreamResult = withContext(Dispatchers.IO) {
-        val url = "$BASE_URL/index.php/vod/play/id/$animeId/sid/$sid/nid/$nid.html"
+    suspend fun getStream(animeId: Int, sid: Int = 1, nid: Int = 1, fallbackUrl: String? = null): StreamResult = withContext(Dispatchers.IO) {
+        try {
+            return@withContext Lk21Parser.getStream(animeId, sid, nid, fallbackUrl)
+        } catch (_: Exception) {}
+
+        val url = fallbackUrl ?: "$BASE_URL/index.php/vod/play/id/$animeId/sid/$sid/nid/$nid.html"
         val html = fetchHtml(url)
 
         val matcher = Pattern.compile("player_aaaa\\s*=\\s*(\\{.+?\\})<", Pattern.DOTALL).matcher(html)

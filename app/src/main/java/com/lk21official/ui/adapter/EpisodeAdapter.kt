@@ -43,17 +43,24 @@ class EpisodeAdapter(
             val isWatched = watchedSet.contains(item.episode)
             val isActive = item.nid == activeNid
 
-            // Clean episode name (e.g. "EP97" -> "97")
-            val cleanEp = item.episode.replace("EP", "", ignoreCase = true).trim()
-            binding.tvEpisodeName.text = if (cleanEp.isNotEmpty()) cleanEp else item.episode
+            val isMovie = item.episode.contains("Movie", ignoreCase = true) || item.episode.contains("Film", ignoreCase = true)
+
+            if (isMovie) {
+                binding.tvEpisodeName.text = "▶ Putar Film (Full Movie HD)"
+                binding.tvEpisodeName.textSize = 15f
+            } else {
+                val cleanEp = item.episode.replace("EP", "", ignoreCase = true).trim()
+                binding.tvEpisodeName.text = if (cleanEp.isNotEmpty()) cleanEp else "${item.nid}"
+                binding.tvEpisodeName.textSize = 17f
+            }
 
             if (isActive) {
-                // Episode Sedang Diputar (Aktif): Latar merah maroon solid (#A11228), teks angka putih 14sp bold
+                // Episode Sedang Diputar (Aktif): Latar merah maroon solid (#A11228), teks angka putih bold
                 binding.layoutEpisodeBox.setBackgroundResource(R.drawable.bg_episode_card_active)
                 binding.tvEpisodeName.setTextColor(0xFFFFFFFF.toInt())
                 binding.tvEpisodeName.setTypeface(null, Typeface.BOLD)
             } else {
-                // Episode Tersedia: Latar abu-abu gelap transparan (rgba(255,255,255,0.07)), teks angka abu-abu terang 14sp
+                // Episode Tersedia: Latar abu-abu gelap transparan (rgba(255,255,255,0.07)), teks angka abu-abu terang
                 binding.layoutEpisodeBox.setBackgroundResource(R.drawable.bg_episode_card_normal)
                 binding.tvEpisodeName.setTextColor(0xFFE2E8F0.toInt())
                 binding.tvEpisodeName.setTypeface(null, Typeface.NORMAL)

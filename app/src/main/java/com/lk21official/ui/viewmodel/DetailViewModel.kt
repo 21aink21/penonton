@@ -19,12 +19,12 @@ class DetailViewModel : ViewModel() {
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
-    fun loadDetail(animeId: Int) {
+    fun loadDetail(animeId: Int, url: String? = null) {
         _isLoading.value = true
         _error.value = null
         viewModelScope.launch {
             try {
-                val data = DonghuaParser.getDetails(animeId)
+                val data = DonghuaParser.getDetails(animeId, url)
                 _detail.value = data
             } catch (e: Exception) {
                 _error.value = e.message ?: "Gagal memuat detail"
