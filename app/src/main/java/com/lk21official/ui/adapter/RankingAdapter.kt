@@ -39,7 +39,12 @@ class RankingAdapter(
         fun bind(item: AnimeItem, rank: Int) {
             binding.tvRankNumber.text = rank.toString()
             binding.tvRankTitle.text = item.title
-            binding.tvRankEp.text = if (item.latestEp.isNotEmpty()) item.latestEp else "Hot Series"
+            val info = listOfNotNull(
+                item.latestEp.takeIf { it.isNotEmpty() },
+                item.year.takeIf { it.isNotEmpty() },
+                item.rating.takeIf { it.isNotEmpty() }?.let { "★ $it" }
+            ).joinToString(" • ")
+            binding.tvRankEp.text = if (info.isNotEmpty()) info else "Popular"
 
             val context = binding.root.context
             when (rank) {

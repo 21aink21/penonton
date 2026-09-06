@@ -8,7 +8,8 @@ data class AnimeItem(
     val latestEp: String,
     val rating: String,
     val poster: String,
-    val url: String
+    val url: String,
+    val year: String = ""
 ) : Serializable
 
 data class AnimeDetail(

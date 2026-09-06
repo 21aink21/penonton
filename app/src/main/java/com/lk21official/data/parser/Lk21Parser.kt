@@ -75,7 +75,11 @@ object Lk21Parser {
             ?: article.selectFirst("span.rating")?.text()?.replace("★", "")?.trim()
             ?: ""
 
-        val year = article.selectFirst("span.year")?.text() ?: ""
+        var year = article.selectFirst("span.year")?.text()?.trim() ?: ""
+        if (year.isEmpty()) {
+            val ym = Pattern.compile("\\b(19\\d\\d|20\\d\\d)\\b").matcher("$slug $title")
+            if (ym.find()) year = ym.group(1) ?: ""
+        }
         val eps = article.selectFirst("span.episode strong")?.text() ?: ""
         val quality = article.selectFirst("span.label")?.text() ?: ""
 
@@ -96,7 +100,7 @@ object Lk21Parser {
             poster = "$POSTER_BASE${poster.removePrefix("/")}"
         }
 
-        return AnimeItem(id, title, badge, rating, poster, fullUrl)
+        return AnimeItem(id, title, badge, rating, poster, fullUrl, year)
     }
 
     // =========================================================================
@@ -138,14 +142,20 @@ object Lk21Parser {
                     val id = slug.hashCode()
                     idToUrlMap[id] = fullUrl
 
+                    var yearVal = itemObj.get("year")?.asString ?: ""
+                    if (yearVal.isEmpty()) {
+                        val ym = Pattern.compile("\\b(19\\d\\d|20\\d\\d)\\b").matcher("$slug $title")
+                        if (ym.find()) yearVal = ym.group(1) ?: ""
+                    }
+
                     val ep = itemObj.get("episode")?.asString ?: ""
                     val badge = if (type == "series") {
                         if (ep.isNotEmpty() && ep != "0") "EPS $ep" else "Series"
                     } else {
-                        itemObj.get("quality")?.asString ?: itemObj.get("year")?.asString ?: "Movie"
+                        itemObj.get("quality")?.asString ?: if (yearVal.isNotEmpty()) yearVal else "Movie"
                     }
 
-                    items.add(AnimeItem(id, title, badge, ratingVal, fullPoster, fullUrl))
+                    items.add(AnimeItem(id, title, badge, ratingVal, fullPoster, fullUrl, yearVal))
                 }
             }
         } catch (e: Exception) {

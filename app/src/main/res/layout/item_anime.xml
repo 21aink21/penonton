@@ -30,32 +30,53 @@
             android:layout_gravity="bottom"
             android:background="@drawable/gradient_poster_bottom" />
 
-        <!-- Rating badge — top left (Enlarged Gold Accent) -->
+        <!-- Top Left Badges (Rating & Year) -->
         <LinearLayout
-            android:id="@+id/layoutRating"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="top|start"
             android:layout_margin="7dp"
-            android:background="@drawable/bg_badge_gold_dark"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
-            <ImageView
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@drawable/ic_star"
-                app:tint="@color/accent_gold" />
-
-            <TextView
-                android:id="@+id/tvRating"
+            <!-- Rating badge — top left (Enlarged Gold Accent) -->
+            <LinearLayout
+                android:id="@+id/layoutRating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="3dp"
-                android:textColor="@color/accent_gold"
-                android:textSize="12sp"
+                android:background="@drawable/bg_badge_gold_dark"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_star"
+                    app:tint="@color/accent_gold" />
+
+                <TextView
+                    android:id="@+id/tvRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="3dp"
+                    android:textColor="@color/accent_gold"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    tools:text="9.5" />
+            </LinearLayout>
+
+            <!-- Year badge — below rating (Neon Cyan/Blue Glass Accent) -->
+            <TextView
+                android:id="@+id/tvYear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_badge_year"
+                android:textColor="#58A6FF"
+                android:textSize="10sp"
                 android:textStyle="bold"
-                tools:text="9.5" />
+                android:visibility="gone"
+                tools:text="2026"
+                tools:visibility="visible" />
         </LinearLayout>
 
         <!-- Episode badge — top right (Enlarged Gold Accent) -->

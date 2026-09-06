@@ -52,6 +52,13 @@ class AnimeAdapter(
                 binding.layoutRating.visibility = View.GONE
             }
 
+            if (item.year.isNotEmpty()) {
+                binding.tvYear.visibility = View.VISIBLE
+                binding.tvYear.text = item.year
+            } else {
+                binding.tvYear.visibility = View.GONE
+            }
+
             binding.ivPoster.loadPoster(item.poster)
             binding.root.setOnClickListener { onItemClick(item) }
         }
