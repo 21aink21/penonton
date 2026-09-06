@@ -54,16 +54,18 @@ class ScheduleFragment : Fragment() {
             setItemViewCacheSize(25)
         }
 
-        setupDayTabs()
+        val defaultCategories = listOf("Terbaru", "Unggulan", "Ongoing", "Complete", "Asian Series", "West Series", "Drakor")
+        setupDayTabs(defaultCategories)
         loadSchedule()
     }
 
-    private fun setupDayTabs() {
-        val days = listOf("Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu")
-        for (day in days) {
-            binding.tabDays.addTab(binding.tabDays.newTab().setText(day))
+    private fun setupDayTabs(categoryNames: List<String>) {
+        binding.tabDays.removeAllTabs()
+        for (name in categoryNames) {
+            binding.tabDays.addTab(binding.tabDays.newTab().setText(name))
         }
 
+        binding.tabDays.clearOnTabSelectedListeners()
         binding.tabDays.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 val idx = tab?.position ?: 0
@@ -84,13 +86,12 @@ class ScheduleFragment : Fragment() {
         lifecycleScope.launch {
             try {
                 schedules = DonghuaParser.getWeeklySchedule()
-
-                val cal = Calendar.getInstance()
-                val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-                val currentDayIdx = if (dayOfWeek == Calendar.SUNDAY) 6 else dayOfWeek - 2
-
-                binding.tabDays.getTabAt(currentDayIdx.coerceIn(0, 6))?.select()
-                displayScheduleForDay(currentDayIdx.coerceIn(0, 6))
+                val categoryNames = schedules.map { it.dayName }
+                if (categoryNames.isNotEmpty()) {
+                    setupDayTabs(categoryNames)
+                    binding.tabDays.getTabAt(0)?.select()
+                    displayScheduleForDay(0)
+                }
             } catch (_: Exception) {
             } finally {
                 binding.shimmerSchedule.stopShimmer()
