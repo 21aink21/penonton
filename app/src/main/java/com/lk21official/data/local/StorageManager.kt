@@ -9,8 +9,25 @@ import com.google.gson.reflect.TypeToken
 
 class StorageManager(context: Context) {
 
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences("donghua_prefs", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = run {
+        val p = context.getSharedPreferences("lk21_prefs", Context.MODE_PRIVATE)
+        val old = context.getSharedPreferences("donghua_prefs", Context.MODE_PRIVATE)
+        if (old.all.isNotEmpty() && p.all.isEmpty()) {
+            val ed = p.edit()
+            old.all.forEach { (k, v) ->
+                when (v) {
+                    is String -> ed.putString(k, v)
+                    is Int -> ed.putInt(k, v)
+                    is Long -> ed.putLong(k, v)
+                    is Float -> ed.putFloat(k, v)
+                    is Boolean -> ed.putBoolean(k, v)
+                    is Set<*> -> @Suppress("UNCHECKED_CAST") ed.putStringSet(k, v as Set<String>)
+                }
+            }
+            ed.apply()
+        }
+        p
+    }
     private val gson = Gson()
 
     // ==========================================

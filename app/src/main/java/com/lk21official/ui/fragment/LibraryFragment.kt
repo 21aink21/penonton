@@ -115,7 +115,7 @@ class LibraryFragment : Fragment() {
             val favorites = storage.getFavorites()
             favoritesAdapter.submitList(favorites)
 
-            binding.tvEmptyLibrary.text = "Belum ada donghua favorit"
+            binding.tvEmptyLibrary.text = "Belum ada film atau serial favorit"
             binding.tvEmptyLibrary.visibility = if (favorites.isEmpty()) View.VISIBLE else View.GONE
             binding.rvLibrary.visibility = if (favorites.isNotEmpty()) View.VISIBLE else View.GONE
         }
