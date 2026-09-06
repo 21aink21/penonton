@@ -39,6 +39,7 @@ object Lk21Parser {
     private var cachedLatest: Pair<Long, List<MovieItem>>? = null
     private var cachedSchedule: Pair<Long, List<WeekdaySchedule>>? = null
     private var cachedRankings: Pair<Long, List<MovieItem>>? = null
+    private var cachedSeriesRankings: Pair<Long, List<MovieItem>>? = null
     private val detailCache = LruCache<Int, MovieDetail>(50)
     private val idToUrlMap = HashMap<Int, String>()
     private val idToCountryMap = HashMap<Int, String>()
@@ -301,6 +302,9 @@ object Lk21Parser {
             items
         } else {
             // Series Popular / Top Series
+            if (!forceRefresh && cachedSeriesRankings != null && (now - cachedSeriesRankings!!.first) < CACHE_EXPIRY_MS) {
+                return@withContext cachedSeriesRankings!!.second
+            }
             val url = "$SERIES_BASE/top-series-today/page/1"
             val html = fetchHtml(url)
             val doc = Jsoup.parse(html)
@@ -308,6 +312,10 @@ object Lk21Parser {
 
             for (card in doc.select("article")) {
                 parseCard(card, SERIES_BASE)?.let { items.add(it) }
+            }
+
+            if (items.isNotEmpty()) {
+                cachedSeriesRankings = Pair(now, items)
             }
             items
         }

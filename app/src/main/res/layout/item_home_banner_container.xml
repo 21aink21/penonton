@@ -19,6 +19,7 @@
         android:background="@android:color/transparent"
         app:tabBackground="@drawable/bg_chip"
         app:tabGravity="center"
+        app:tabMode="auto"
         app:tabIndicatorHeight="0dp"
         app:tabPaddingEnd="3dp"
         app:tabPaddingStart="3dp" />

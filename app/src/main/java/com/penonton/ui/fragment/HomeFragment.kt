@@ -147,12 +147,12 @@ class HomeFragment : Fragment() {
         }
         lifecycleScope.launch {
             try {
-                val rankings = Lk21Parser.getRankings(forceRefresh)
+                val rankings = Lk21Parser.getRankings(forceRefresh, "movie")
                 val latest = Lk21Parser.getLatest(1, forceRefresh)
                 val history = storage.getHistory()
                 currentPage = 1
                 hasMorePages = latest.isNotEmpty()
-                homeAdapter.setData(rankings.take(8), latest, history)
+                homeAdapter.setData(rankings, latest, history)
             } catch (e: Exception) {
                 Log.e("HomeFragment", "Load error", e)
             } finally {

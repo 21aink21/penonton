@@ -148,13 +148,13 @@ class ScheduleFragment : Fragment() {
         }
         lifecycleScope.launch {
             try {
-                val seriesBanners = Lk21Parser.getFeaturedSeriesBanners(forceRefresh)
+                val seriesRankings = Lk21Parser.getRankings(forceRefresh, "series")
                 val latestSeries = Lk21Parser.getLatestSeries(1, forceRefresh)
                 val history = storage.getHistory()
                 currentPage = 1
                 hasMorePages = latestSeries.isNotEmpty()
                 seriesAdapter.setData(
-                    newBanners = seriesBanners.take(8),
+                    newBanners = seriesRankings,
                     newAnime = latestSeries,
                     history = history,
                     customTitle = "Series & Drama Terbaru"
