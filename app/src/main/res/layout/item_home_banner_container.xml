@@ -13,14 +13,18 @@
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabIndicator"
         android:layout_width="wrap_content"
-        android:layout_height="14dp"
+        android:layout_height="10dp"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="10dp"
+        android:layout_marginBottom="12dp"
         android:background="@android:color/transparent"
-        app:tabBackground="@drawable/bg_chip"
+        app:tabBackground="@drawable/selector_banner_dot"
         app:tabGravity="center"
-        app:tabMode="auto"
         app:tabIndicatorHeight="0dp"
+        app:tabMinWidth="0dp"
+        app:tabMode="auto"
+        app:tabPaddingBottom="0dp"
         app:tabPaddingEnd="3dp"
-        app:tabPaddingStart="3dp" />
+        app:tabPaddingStart="3dp"
+        app:tabPaddingTop="0dp"
+        app:tabRippleColor="@android:color/transparent" />
 </FrameLayout>
