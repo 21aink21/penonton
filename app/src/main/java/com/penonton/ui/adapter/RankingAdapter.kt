@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.penonton.R
 import com.penonton.data.model.AnimeItem
 import com.penonton.databinding.ItemRankingBinding
+import com.penonton.util.CountryUtils
 import com.penonton.util.loadPoster
 
 class RankingAdapter(
@@ -39,6 +40,15 @@ class RankingAdapter(
         fun bind(item: AnimeItem, rank: Int) {
             binding.tvRankNumber.text = rank.toString()
             binding.tvRankTitle.text = item.title
+
+            val countryBadge = CountryUtils.getCountryBadge(item)
+            if (countryBadge.isNotEmpty()) {
+                binding.tvRankCountry.visibility = android.view.View.VISIBLE
+                binding.tvRankCountry.text = countryBadge
+            } else {
+                binding.tvRankCountry.visibility = android.view.View.GONE
+            }
+
             val info = listOfNotNull(
                 item.latestEp.takeIf { it.isNotEmpty() },
                 item.year.takeIf { it.isNotEmpty() },

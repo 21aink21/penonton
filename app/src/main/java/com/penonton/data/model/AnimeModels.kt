@@ -9,7 +9,8 @@ data class AnimeItem(
     val rating: String,
     val poster: String,
     val url: String,
-    val year: String = ""
+    val year: String = "",
+    val country: String = ""
 ) : Serializable
 
 data class AnimeDetail(

@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.penonton.data.model.AnimeItem
 import com.penonton.databinding.ItemAnimeBinding
+import com.penonton.util.CountryUtils
 import com.penonton.util.loadPoster
 
 class AnimeAdapter(
@@ -57,6 +58,14 @@ class AnimeAdapter(
                 binding.tvYear.text = item.year
             } else {
                 binding.tvYear.visibility = View.GONE
+            }
+
+            val countryBadge = CountryUtils.getCountryBadge(item)
+            if (countryBadge.isNotEmpty()) {
+                binding.tvCountry.visibility = View.VISIBLE
+                binding.tvCountry.text = countryBadge
+            } else {
+                binding.tvCountry.visibility = View.GONE
             }
 
             binding.ivPoster.loadPoster(item.poster)

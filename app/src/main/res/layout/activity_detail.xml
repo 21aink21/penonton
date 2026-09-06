@@ -191,6 +191,22 @@
                             android:textStyle="bold"
                             tools:text="EP97" />
 
+                        <!-- Badge Negara (Cyber Glass Badge) -->
+                        <TextView
+                            android:id="@+id/tvDetailCountry"
+                            android:layout_width="wrap_content"
+                            android:layout_height="30dp"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/bg_badge_country"
+                            android:gravity="center"
+                            android:paddingHorizontal="10dp"
+                            android:textColor="#E2E8F0"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:visibility="gone"
+                            tools:text="🇨🇳 China"
+                            tools:visibility="visible" />
+
                         <!-- Informasi Tahun, Negara & Genre -->
                         <TextView
                             android:id="@+id/tvDetailMeta"

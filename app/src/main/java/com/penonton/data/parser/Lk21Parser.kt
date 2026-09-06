@@ -41,6 +41,7 @@ object Lk21Parser {
     private var cachedRankings: Pair<Long, List<AnimeItem>>? = null
     private val detailCache = LruCache<Int, AnimeDetail>(50)
     private val idToUrlMap = HashMap<Int, String>()
+    private val idToCountryMap = HashMap<Int, String>()
 
     private const val CACHE_EXPIRY_MS = 10 * 60 * 1000L // 10 minutes
 
@@ -58,7 +59,7 @@ object Lk21Parser {
         }
     }
 
-    private fun parseCard(article: Element, baseUrl: String): AnimeItem? {
+    private fun parseCard(article: Element, baseUrl: String, explicitCountry: String = ""): AnimeItem? {
         val a = article.selectFirst("figure a") ?: article.selectFirst("a[itemprop=url]") ?: return null
         val href = a.attr("href")
         if (href.isEmpty() || href == "#") return null
@@ -90,6 +91,21 @@ object Lk21Parser {
             else -> "Movie"
         }
 
+        val country = when {
+            explicitCountry.isNotEmpty() -> {
+                idToCountryMap[id] = explicitCountry
+                explicitCountry
+            }
+            idToCountryMap.containsKey(id) -> idToCountryMap[id] ?: ""
+            else -> {
+                val found = article.selectFirst("a[href*=/country/]")?.text() ?: ""
+                if (found.isNotEmpty()) {
+                    idToCountryMap[id] = found
+                    found
+                } else ""
+            }
+        }
+
         var poster = article.selectFirst("picture img")?.let {
             val dSrc = it.attr("data-src")
             val src = it.attr("src")
@@ -100,7 +116,7 @@ object Lk21Parser {
             poster = "$POSTER_BASE${poster.removePrefix("/")}"
         }
 
-        return AnimeItem(id, title, badge, rating, poster, fullUrl, year)
+        return AnimeItem(id, title, badge, rating, poster, fullUrl, year, country)
     }
 
     // =========================================================================
@@ -155,7 +171,8 @@ object Lk21Parser {
                         itemObj.get("quality")?.asString ?: if (yearVal.isNotEmpty()) yearVal else "Movie"
                     }
 
-                    items.add(AnimeItem(id, title, badge, ratingVal, fullPoster, fullUrl, yearVal))
+                    val country = idToCountryMap[id] ?: ""
+                    items.add(AnimeItem(id, title, badge, ratingVal, fullPoster, fullUrl, yearVal, country))
                 }
             }
         } catch (e: Exception) {
@@ -318,11 +335,17 @@ object Lk21Parser {
         val schedules = mutableListOf<WeekdaySchedule>()
         for ((idx, title, catUrl) in categories) {
             val list = mutableListOf<AnimeItem>()
+            val defaultCountry = when (idx) {
+                5 -> "Asian"
+                6 -> "United States"
+                7 -> "South Korea"
+                else -> ""
+            }
             try {
                 val html = fetchHtml(catUrl)
                 val doc = Jsoup.parse(html)
                 for (card in doc.select("article").take(20)) {
-                    parseCard(card, SERIES_BASE)?.let { list.add(it) }
+                    parseCard(card, SERIES_BASE, defaultCountry)?.let { list.add(it) }
                 }
             } catch (_: Exception) {}
             schedules.add(WeekdaySchedule(idx, title, list))
@@ -384,6 +407,16 @@ object Lk21Parser {
                 val v = text.substringAfter(":").trim()
                 if (k.isNotEmpty() && v.isNotEmpty()) meta[k] = v
             }
+        }
+
+        val countryFromLinks = doc.select("div.content a[href*=/country/]").firstOrNull()?.text()
+            ?: doc.select("a[href*=/country/]").lastOrNull()?.text()
+            ?: meta["negara"] ?: meta["country"] ?: ""
+
+        if (countryFromLinks.isNotEmpty()) {
+            meta["country"] = countryFromLinks
+            meta["negara"] = countryFromLinks
+            idToCountryMap[itemId] = countryFromLinks
         }
 
         val servers = mutableListOf<ServerGroup>()

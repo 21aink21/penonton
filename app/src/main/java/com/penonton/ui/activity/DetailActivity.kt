@@ -293,10 +293,23 @@ class DetailActivity : AppCompatActivity() {
         val ratingStr = detail.meta["score"] ?: detail.meta["rating"] ?: "9.0"
         binding.tvRatingDetail.text = ratingStr.replace("★", "").trim()
 
+        val country = detail.meta["country"] ?: detail.meta["negara"] ?: ""
+        val countryBadge = if (country.isNotEmpty()) {
+            com.penonton.util.CountryUtils.formatCountry(country)
+        } else {
+            com.penonton.util.CountryUtils.getCountryBadge(AnimeItem(detail.id, detail.title, "", "", "", ""))
+        }
+
+        if (countryBadge.isNotEmpty()) {
+            binding.tvDetailCountry.visibility = View.VISIBLE
+            binding.tvDetailCountry.text = countryBadge
+        } else {
+            binding.tvDetailCountry.visibility = View.GONE
+        }
+
         val metaParts = mutableListOf<String>()
         detail.meta["year"]?.let { metaParts.add(it) }
-        detail.meta["country"]?.let { metaParts.add(it) }
-        detail.meta["region"]?.let { metaParts.add(it) }
+        if (country.isNotEmpty()) metaParts.add(country)
         detail.meta["genre"]?.let { metaParts.add(it) }
         detail.meta["duration"]?.let { metaParts.add(it) }
         

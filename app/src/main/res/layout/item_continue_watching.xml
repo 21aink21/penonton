@@ -39,6 +39,21 @@
             android:src="@drawable/ic_play"
             app:tint="@color/text_primary" />
 
+        <!-- Country badge top-left (Cyber Glass Accent) -->
+        <TextView
+            android:id="@+id/tvCwCountry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_margin="7dp"
+            android:background="@drawable/bg_badge_country"
+            android:textColor="#E2E8F0"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:text="🇨🇳 CN"
+            tools:visibility="visible" />
+
         <!-- Episode badge top-right (Enlarged Gold Accent) -->
         <TextView
             android:id="@+id/tvCwEpisode"

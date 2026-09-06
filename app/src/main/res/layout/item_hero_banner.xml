@@ -64,6 +64,22 @@
                     android:textStyle="bold"
                     tools:text="🔥 Top #1" />
 
+                <!-- Country Badge (Cyber Glass Accent) -->
+                <TextView
+                    android:id="@+id/tvBannerCountry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_badge_country"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:textColor="#E2E8F0"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:text="🇨🇳 CN"
+                    tools:visibility="visible" />
+
                 <!-- Episode Badge (Gold Accent) -->
                 <TextView
                     android:id="@+id/tvBannerEp"

@@ -79,18 +79,40 @@
                 tools:visibility="visible" />
         </LinearLayout>
 
-        <!-- Episode badge — top right (Enlarged Gold Accent) -->
-        <TextView
-            android:id="@+id/tvLatestEp"
+        <!-- Top Right Badges (Episode & Country) -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="top|end"
             android:layout_margin="7dp"
-            android:background="@drawable/bg_badge_gold_dark"
-            android:textColor="@color/accent_gold"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            tools:text="EP97" />
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <!-- Episode badge — top right (Enlarged Gold Accent) -->
+            <TextView
+                android:id="@+id/tvLatestEp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_badge_gold_dark"
+                android:textColor="@color/accent_gold"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                tools:text="EP97" />
+
+            <!-- Country badge — below episode (Cyber Glass Badge) -->
+            <TextView
+                android:id="@+id/tvCountry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_badge_country"
+                android:textColor="#E2E8F0"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="🇺🇸 US"
+                tools:visibility="visible" />
+        </LinearLayout>
 
         <!-- Title text overlaid at bottom -->
         <TextView

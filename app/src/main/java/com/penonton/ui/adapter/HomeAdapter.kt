@@ -20,6 +20,7 @@ import com.penonton.databinding.ItemHomeHeaderBinding
 import com.penonton.databinding.ItemHomeSearchBinding
 import com.penonton.databinding.ItemLoadingFooterBinding
 import com.penonton.ui.activity.PlayerActivity
+import com.penonton.util.CountryUtils
 import com.penonton.util.loadPoster
 import com.google.android.material.tabs.TabLayoutMediator
 
@@ -261,6 +262,16 @@ class HomeAdapter(
             items.forEach { item ->
                 val card = ItemContinueWatchingBinding.inflate(inflater, binding.llContinueWatchingCards, false)
                 card.ivCwPoster.loadPoster(item.poster)
+
+                val dummyItem = AnimeItem(id = item.animeId, title = item.title, latestEp = item.episodeName, rating = "", poster = item.poster, url = "")
+                val countryBadge = CountryUtils.getCountryBadge(dummyItem)
+                if (countryBadge.isNotEmpty()) {
+                    card.tvCwCountry.visibility = View.VISIBLE
+                    card.tvCwCountry.text = countryBadge
+                } else {
+                    card.tvCwCountry.visibility = View.GONE
+                }
+
                 val mins = item.positionMs / 60000
                 val secs = (item.positionMs % 60000) / 1000
                 val effectiveDuration = if (item.durationMs > 0L) item.durationMs else 1200000L
@@ -306,6 +317,15 @@ class HomeAdapter(
             if (item.latestEp.isNotEmpty()) { binding.tvLatestEp.visibility = View.VISIBLE; binding.tvLatestEp.text = item.latestEp } else binding.tvLatestEp.visibility = View.GONE
             if (item.rating.isNotEmpty()) { binding.layoutRating.visibility = View.VISIBLE; binding.tvRating.text = item.rating } else binding.layoutRating.visibility = View.GONE
             if (item.year.isNotEmpty()) { binding.tvYear.visibility = View.VISIBLE; binding.tvYear.text = item.year } else binding.tvYear.visibility = View.GONE
+
+            val countryBadge = CountryUtils.getCountryBadge(item)
+            if (countryBadge.isNotEmpty()) {
+                binding.tvCountry.visibility = View.VISIBLE
+                binding.tvCountry.text = countryBadge
+            } else {
+                binding.tvCountry.visibility = View.GONE
+            }
+
             binding.ivPoster.loadPoster(item.poster)
             binding.root.setOnClickListener { onAnimeClick(item) }
         }

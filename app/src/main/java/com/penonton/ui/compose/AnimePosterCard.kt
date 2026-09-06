@@ -32,6 +32,7 @@ fun AnimePosterCard(
     title: String = "",
     rating: String = "",
     latestEp: String = "",
+    country: String = "",
     width: Dp = 180.dp,
     height: Dp = 270.dp,
     borderRadius: Dp = 16.dp,
@@ -120,6 +121,25 @@ fun AnimePosterCard(
                             )
                         }
                     }
+                }
+            }
+
+            // Top-end Country Badge
+            val countryBadge = if (country.isNotEmpty()) com.penonton.util.CountryUtils.formatCountry(country) else ""
+            if (countryBadge.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .background(Color(0xE60F172A), RoundedCornerShape(5.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = countryBadge,
+                        color = Color(0xFFE2E8F0),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.penonton.data.model.AnimeItem
 import com.penonton.databinding.ItemScheduleBinding
+import com.penonton.util.CountryUtils
 import com.penonton.util.loadPoster
 
 class ScheduleAdapter(
@@ -49,6 +50,14 @@ class ScheduleAdapter(
                 binding.tvRating.text = item.rating
             } else {
                 binding.layoutRating.visibility = View.GONE
+            }
+
+            val countryBadge = CountryUtils.getCountryBadge(item)
+            if (countryBadge.isNotEmpty()) {
+                binding.tvCountry.visibility = View.VISIBLE
+                binding.tvCountry.text = countryBadge
+            } else {
+                binding.tvCountry.visibility = View.GONE
             }
 
             binding.ivPoster.loadPoster(item.poster)

@@ -6,6 +6,7 @@ import android.view.animation.DecelerateInterpolator
 import androidx.recyclerview.widget.RecyclerView
 import com.penonton.data.model.AnimeItem
 import com.penonton.databinding.ItemHeroBannerBinding
+import com.penonton.util.CountryUtils
 import com.penonton.util.loadPoster
 
 class HeroBannerAdapter(
@@ -47,6 +48,15 @@ class HeroBannerAdapter(
         fun bind(item: AnimeItem, rank: Int) {
             binding.tvBannerTitle.text = item.title
             binding.tvBannerRank.text = "🔥 Top #$rank"
+
+            val countryBadge = CountryUtils.getCountryBadge(item)
+            if (countryBadge.isNotEmpty()) {
+                binding.tvBannerCountry.visibility = android.view.View.VISIBLE
+                binding.tvBannerCountry.text = countryBadge
+            } else {
+                binding.tvBannerCountry.visibility = android.view.View.GONE
+            }
+
             binding.tvBannerEp.text = if (item.latestEp.isNotEmpty()) item.latestEp else "HD"
             binding.tvBannerRating.text = if (item.rating.isNotEmpty()) "★ ${item.rating}" else "★ 9.0"
 
