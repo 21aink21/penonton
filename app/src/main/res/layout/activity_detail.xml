@@ -7,19 +7,19 @@
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
 
-    <!-- Large Ambient Logo Watermark + Brand Text Lockup on Background (1dp Margin, Alpha 0.40) -->
+    <!-- Large Ambient Logo Watermark + Brand Text Lockup on Background (Subtle Branded Alpha 0.12) -->
     <LinearLayout
         android:id="@+id/layoutBackgroundWatermark"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_marginHorizontal="1dp"
-        android:alpha="0.40"
+        android:alpha="0.12"
         android:gravity="center"
         android:importantForAccessibility="no"
         android:orientation="vertical">
 
-        <!-- Watermark App Icon (Max Full Width with 1dp Margin) -->
+        <!-- Watermark App Icon -->
         <ImageView
             android:id="@+id/ivBackgroundWatermark"
             android:layout_width="match_parent"
@@ -27,7 +27,7 @@
             android:scaleType="fitCenter"
             android:src="@mipmap/ic_launcher" />
 
-        <!-- Watermark Brand Text Logo Selaras 100% -->
+        <!-- Watermark Brand Text Logo -->
         <TextView
             android:id="@+id/tvWatermarkText"
             android:layout_width="wrap_content"
@@ -57,7 +57,7 @@
             android:paddingBottom="40dp">
 
             <!-- ======================================================== -->
-            <!-- 1. Hero Header & Backdrop Poster (~400dp, Aspect ~3:4, Full-Bleed) -->
+            <!-- 1. Hero Header & Backdrop Poster (~400dp, Full-Bleed) -->
             <!-- ======================================================== -->
             <FrameLayout
                 android:id="@+id/playerContainer"
@@ -72,32 +72,49 @@
                     android:layout_height="match_parent"
                     android:scaleType="centerCrop" />
 
-                <!-- Gradient Atas (Top Scrim: rgba(0,0,0,0.4) -> transparent, tinggi 60dp) -->
+                <!-- Gradient Atas (Top Scrim) -->
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
                     android:layout_gravity="top"
                     android:background="@drawable/gradient_top_scrim" />
 
-                <!-- Gradient Bawah (Bottom Scrim untuk keterbacaan teks judul) -->
+                <!-- Gradient Bawah (Bottom Scrim) -->
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:background="@drawable/gradient_bottom_scrim" />
 
-                <!-- Navigasi Atas (Top-Left: inset-top 42dp, inset-left 16dp, touch target 48x48dp, icon 24x24dp) -->
+                <!-- Center Glowing Play Button -->
                 <FrameLayout
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_play_center_hero"
+                    android:elevation="6dp">
+
+                    <ImageView
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="center"
+                        android:layout_marginStart="3dp"
+                        android:src="@drawable/ic_play"
+                        app:tint="#FFFFFF" />
+                </FrameLayout>
+
+                <!-- Navigasi Atas (Top-Left: inset-top 42dp, inset-left 16dp) -->
+                <FrameLayout
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
                     android:layout_gravity="top|start"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="42dp">
 
                     <ImageButton
                         android:id="@+id/btnBack"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:background="@drawable/bg_back_floating"
                         android:src="@drawable/ic_back"
                         app:tint="#FFFFFF" />
                 </FrameLayout>
@@ -311,7 +328,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="1080P En"
+                        android:text="Kualitas"
                         android:textColor="#CBD5E1"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -345,7 +362,7 @@
                         android:lineSpacingMultiplier="1.45"
                         android:textColor="#F1F5F9"
                         android:textSize="15sp"
-                        tools:text="Sinopsis cerita donghua disini..." />
+                        tools:text="Sinopsis film &amp; series disini..." />
 
                     <!-- Ekspansi Teks: "Lihat Selengkapnya ▸" aksen oranye/kuning (#F59E0B, 15sp bold) -->
                     <TextView
@@ -407,7 +424,7 @@
                     android:text="📢"
                     android:textSize="18sp" />
 
-                <!-- Peringatan oranye-kuning (hanya server indo ganjiang yang aktif, font 14sp bold) -->
+                <!-- Peringatan oranye-kuning (font 14sp bold) -->
                 <TextView
                     android:id="@+id/tvServerNotice"
                     android:layout_width="0dp"
@@ -416,7 +433,7 @@
                     android:layout_weight="1"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="hanya server indo ganjiang yang aktif"
+                    android:text="Server HD LK21 Aktif • Resolusi 1080p &amp; 720p Sub Indo"
                     android:textColor="#F59E0B"
                     android:textSize="14sp"
                     android:textStyle="bold" />
