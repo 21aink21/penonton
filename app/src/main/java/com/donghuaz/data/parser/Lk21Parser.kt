@@ -179,7 +179,33 @@ object Lk21Parser {
     }
 
     // =========================================================================
-    // 3. FEATURED BANNERS
+    // 2.1 LATEST SERIES (NONTONDRAMA)
+    // =========================================================================
+    private var cachedLatestSeries: Pair<Long, List<AnimeItem>>? = null
+
+    suspend fun getLatestSeries(page: Int = 1, forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        if (!forceRefresh && page == 1 && cachedLatestSeries != null && (now - cachedLatestSeries!!.first) < CACHE_EXPIRY_MS) {
+            return@withContext cachedLatestSeries!!.second
+        }
+
+        val url = "$SERIES_BASE/latest-series/page/$page"
+        val html = fetchHtml(url)
+        val doc = Jsoup.parse(html)
+        val items = mutableListOf<AnimeItem>()
+
+        for (card in doc.select("article")) {
+            parseCard(card, SERIES_BASE)?.let { items.add(it) }
+        }
+
+        if (page == 1 && items.isNotEmpty()) {
+            cachedLatestSeries = Pair(now, items)
+        }
+        items
+    }
+
+    // =========================================================================
+    // 3. FEATURED BANNERS (MOVIES & SERIES)
     // =========================================================================
     suspend fun getFeaturedBanners(forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
@@ -197,6 +223,29 @@ object Lk21Parser {
 
         if (items.isNotEmpty()) {
             cachedBanners = Pair(now, items)
+        }
+        items
+    }
+
+    private var cachedSeriesBanners: Pair<Long, List<AnimeItem>>? = null
+
+    suspend fun getFeaturedSeriesBanners(forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        if (!forceRefresh && cachedSeriesBanners != null && (now - cachedSeriesBanners!!.first) < CACHE_EXPIRY_MS) {
+            return@withContext cachedSeriesBanners!!.second
+        }
+
+        val url = "$SERIES_BASE/top-series-today/page/1"
+        val html = fetchHtml(url)
+        val doc = Jsoup.parse(html)
+        val items = mutableListOf<AnimeItem>()
+
+        for (card in doc.select("div.featured-slider article, div.sliders article, article").take(8)) {
+            parseCard(card, SERIES_BASE)?.let { items.add(it) }
+        }
+
+        if (items.isNotEmpty()) {
+            cachedSeriesBanners = Pair(now, items)
         }
         items
     }

@@ -1,54 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/swipeRefresh"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@android:color/transparent">
 
-    <!-- Day Selector Tabs -->
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabDays"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:background="@color/surface"
-        app:tabIndicatorColor="@color/primary"
-        app:tabIndicatorHeight="3dp"
-        app:tabMode="scrollable"
-        app:tabSelectedTextColor="@color/primary"
-        app:tabTextColor="@color/text_secondary" />
+        android:layout_height="match_parent">
 
-    <!-- Shimmer Loader -->
-    <com.facebook.shimmer.ShimmerFrameLayout
-        android:id="@+id/shimmerSchedule"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone">
-        <include layout="@layout/layout_shimmer_grid" />
-    </com.facebook.shimmer.ShimmerFrameLayout>
+        <com.facebook.shimmer.ShimmerFrameLayout
+            android:id="@+id/shimmerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+            <include layout="@layout/layout_shimmer_grid" />
+        </com.facebook.shimmer.ShimmerFrameLayout>
 
-    <!-- Schedule RecyclerView (2-Column Grid with 10dp Spacing) -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvSchedule"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:padding="5dp"
-        android:paddingBottom="96dp"
-        tools:listitem="@layout/item_schedule" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvScheduleAnime"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="96dp"
+            android:scrollbars="none"
+            tools:listitem="@layout/item_anime" />
 
-    <!-- Empty State -->
-    <TextView
-        android:id="@+id/tvEmptySchedule"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="60dp"
-        android:text="Tidak ada jadwal rilis untuk hari ini"
-        android:textColor="@color/text_secondary"
-        android:textSize="14sp"
-        android:visibility="gone" />
-
-</LinearLayout>
+    </FrameLayout>
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

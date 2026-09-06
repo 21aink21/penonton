@@ -28,7 +28,9 @@ class HomeAdapter(
     private val onBannerClick: (AnimeItem) -> Unit,
     private val onBannerSelected: (String) -> Unit = {},
     private val onSearchSubmit: (String) -> Unit,
-    private val onSearchClear: () -> Unit
+    private val onSearchClear: () -> Unit,
+    private val defaultHeaderTitle: String = "Rilis Terbaru",
+    private val searchHint: String = "Cari film atau serial drama..."
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -44,17 +46,22 @@ class HomeAdapter(
     private val banners = mutableListOf<AnimeItem>()
     private val animeList = mutableListOf<AnimeItem>()
     private val continueWatching = mutableListOf<WatchHistoryItem>()
-    private var headerTitle: String = "Rilis Terbaru"
+    private var headerTitle: String = defaultHeaderTitle
     private var currentSearchQuery: String = ""
     private var isSearching = false
     private var isLoadingMore = false
 
     // ── Public API ──────────────────────────────────────────────────────────
 
-    fun setData(newBanners: List<AnimeItem>, newAnime: List<AnimeItem>, history: List<WatchHistoryItem> = emptyList()) {
+    fun setData(
+        newBanners: List<AnimeItem>,
+        newAnime: List<AnimeItem>,
+        history: List<WatchHistoryItem> = emptyList(),
+        customTitle: String? = null
+    ) {
         isSearching = false
         currentSearchQuery = ""
-        headerTitle = "Rilis Terbaru"
+        headerTitle = customTitle ?: defaultHeaderTitle
         banners.clear(); banners.addAll(newBanners)
         animeList.clear(); animeList.addAll(newAnime)
         continueWatching.clear(); continueWatching.addAll(history.take(10))
@@ -207,6 +214,7 @@ class HomeAdapter(
     inner class SearchViewHolder(private val binding: ItemHomeSearchBinding) :
         RecyclerView.ViewHolder(binding.root) {
         init {
+            binding.etSearch.hint = searchHint
             binding.etSearch.setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                     val query = binding.etSearch.text?.toString()?.trim() ?: ""

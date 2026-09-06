@@ -125,6 +125,14 @@ object DonghuaParser {
         items
     }
 
+    suspend fun getLatestSeries(page: Int = 1, forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+        try {
+            val results = Lk21Parser.getLatestSeries(page, forceRefresh)
+            if (results.isNotEmpty()) return@withContext results
+        } catch (_: Exception) {}
+        emptyList()
+    }
+
     suspend fun getFeaturedBanners(forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
         try {
             val results = Lk21Parser.getFeaturedBanners(forceRefresh)
@@ -149,6 +157,14 @@ object DonghuaParser {
             cachedBanners = Pair(now, items)
         }
         items
+    }
+
+    suspend fun getFeaturedSeriesBanners(forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+        try {
+            val results = Lk21Parser.getFeaturedSeriesBanners(forceRefresh)
+            if (results.isNotEmpty()) return@withContext results
+        } catch (_: Exception) {}
+        getRankings(forceRefresh, type = "series")
     }
 
     suspend fun getWeeklySchedule(forceRefresh: Boolean = false): List<WeekdaySchedule> = withContext(Dispatchers.IO) {

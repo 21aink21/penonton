@@ -63,7 +63,9 @@ class HomeFragment : Fragment() {
             onBannerClick = { openDetail(it) },
             onBannerSelected = { (activity as? com.donghuaz.ui.activity.MainActivity)?.updateAmbientBackdrop(it) },
             onSearchSubmit = { search(it) },
-            onSearchClear = { clearSearch() }
+            onSearchClear = { clearSearch() },
+            defaultHeaderTitle = "Film & Movie Terbaru",
+            searchHint = "Cari film LK21..."
         )
 
         val glm = GridLayoutManager(requireContext(), 3)
