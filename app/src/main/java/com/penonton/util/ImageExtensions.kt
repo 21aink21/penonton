@@ -26,9 +26,9 @@ fun ImageView.loadPoster(url: String?) {
     }
 
     val referer = when {
+        url.contains("nontondrama") -> "https://tv9.nontondrama.my/"
         url.contains("doubanio.com") -> "https://movie.douban.com/"
-        url.contains("donghuafun.com") -> "https://donghuafun.com/"
-        else -> "https://donghuafun.com/"
+        else -> "https://tv12.lk21official.cc/"
     }
 
     val glideUrl = GlideUrl(

@@ -9,7 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.penonton.R
-import com.penonton.data.parser.DonghuaParser
+import com.penonton.data.parser.Lk21Parser
 import com.penonton.databinding.FragmentRankingBinding
 import com.penonton.ui.activity.DetailActivity
 import com.penonton.ui.adapter.RankingAdapter
@@ -38,10 +38,10 @@ class RankingFragment : Fragment() {
 
         rankingAdapter = RankingAdapter { anime ->
             val intent = Intent(requireContext(), DetailActivity::class.java).apply {
-                putExtra("ANIME_ID", anime.id)
-                putExtra("ANIME_TITLE", anime.title)
-                putExtra("ANIME_POSTER", anime.poster)
-                putExtra("ANIME_URL", anime.url)
+                putExtra("MEDIA_ID", anime.id)
+                putExtra("MEDIA_TITLE", anime.title)
+                putExtra("MEDIA_POSTER", anime.poster)
+                putExtra("MEDIA_URL", anime.url)
             }
             startActivity(intent)
         }
@@ -85,7 +85,7 @@ class RankingFragment : Fragment() {
 
         lifecycleScope.launch {
             try {
-                val rankings = DonghuaParser.getRankings(forceRefresh, currentType)
+                val rankings = Lk21Parser.getRankings(forceRefresh, currentType)
                 rankingAdapter.submitList(rankings)
             } catch (_: Exception) {
             } finally {

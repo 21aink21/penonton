@@ -10,8 +10,8 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import com.penonton.R
 import com.penonton.data.local.StorageManager
-import com.penonton.data.model.AnimeDetail
-import com.penonton.data.model.AnimeItem
+import com.penonton.data.model.MovieDetail
+import com.penonton.data.model.MovieItem
 import com.penonton.data.model.EpisodeItem
 import com.penonton.databinding.ActivityDetailBinding
 import com.penonton.ui.adapter.EpisodeAdapter
@@ -29,8 +29,8 @@ class DetailActivity : AppCompatActivity() {
 
     private lateinit var serverAdapter: ServerAdapter
     private lateinit var episodeAdapter: EpisodeAdapter
-    private var currentDetail: AnimeDetail? = null
-    private var animeId: Int = 0
+    private var currentDetail: MovieDetail? = null
+    private var movieId: Int = 0
     private var isSynopsisExpanded = false
     private var selectedServerIdx = 0
 
@@ -41,10 +41,10 @@ class DetailActivity : AppCompatActivity() {
         GradientBackground.apply(this)
 
         storage = StorageManager.getInstance(this)
-        animeId = intent.getIntExtra("ANIME_ID", 0)
-        val initialTitle = intent.getStringExtra("ANIME_TITLE") ?: ""
-        val initialPoster = intent.getStringExtra("ANIME_POSTER") ?: ""
-        val initialUrl = intent.getStringExtra("ANIME_URL") ?: ""
+        movieId = intent.getIntExtra("MEDIA_ID", 0)
+        val initialTitle = intent.getStringExtra("MEDIA_TITLE") ?: ""
+        val initialPoster = intent.getStringExtra("MEDIA_POSTER") ?: ""
+        val initialUrl = intent.getStringExtra("MEDIA_URL") ?: ""
 
         if (initialTitle.isNotEmpty()) binding.tvDetailTitle.text = initialTitle
         if (initialPoster.isNotEmpty()) {
@@ -52,9 +52,8 @@ class DetailActivity : AppCompatActivity() {
         }
 
         if (initialUrl.isNotEmpty()) {
-            com.penonton.data.parser.Lk21Parser.registerUrl(animeId, initialUrl)
-            com.penonton.data.parser.DonghuaParser.registerUrl(animeId, initialUrl)
-        }
+            com.penonton.data.parser.Lk21Parser.registerUrl(movieId, initialUrl)
+                    }
 
         binding.btnBack.setOnClickListener { finish() }
 
@@ -66,8 +65,8 @@ class DetailActivity : AppCompatActivity() {
         setupObservers()
         setupWatermarkStyle()
 
-        if (animeId > 0 || initialUrl.isNotEmpty()) {
-            viewModel.loadDetail(animeId, initialUrl)
+        if (movieId > 0 || initialUrl.isNotEmpty()) {
+            viewModel.loadDetail(movieId, initialUrl)
         }
     }
 
@@ -99,7 +98,7 @@ class DetailActivity : AppCompatActivity() {
 
     private fun setupHeroPlay() {
         val playAction = View.OnClickListener {
-            val lastWatched = storage.getLastWatched(animeId)
+            val lastWatched = storage.getLastWatched(movieId)
             val firstEpisode = currentDetail?.servers?.getOrNull(selectedServerIdx)?.episodes?.firstOrNull()
                 ?: currentDetail?.servers?.firstOrNull()?.episodes?.firstOrNull()
 
@@ -107,10 +106,10 @@ class DetailActivity : AppCompatActivity() {
                 val matchedEp = currentDetail?.servers?.flatMap { it.episodes }?.firstOrNull { it.nid == lastWatched.nid }
                 EpisodeItem(
                     episode = lastWatched.episodeName,
-                    id = lastWatched.animeId,
+                    id = lastWatched.movieId,
                     sid = lastWatched.sid,
                     nid = lastWatched.nid,
-                    playUrl = matchedEp?.playUrl ?: firstEpisode?.playUrl ?: intent.getStringExtra("ANIME_URL") ?: "",
+                    playUrl = matchedEp?.playUrl ?: firstEpisode?.playUrl ?: intent.getStringExtra("MEDIA_URL") ?: "",
                     path = ""
                 )
             } else {
@@ -131,13 +130,13 @@ class DetailActivity : AppCompatActivity() {
         // 1. +Daftar Saya (Favorite)
         updateFavoriteButtonState()
         binding.btnActionFavorite.setOnClickListener {
-            val item = AnimeItem(
-                id = animeId,
-                title = currentDetail?.title ?: intent.getStringExtra("ANIME_TITLE") ?: "",
+            val item = MovieItem(
+                id = movieId,
+                title = currentDetail?.title ?: intent.getStringExtra("MEDIA_TITLE") ?: "",
                 latestEp = currentDetail?.status ?: "",
                 rating = "",
-                poster = currentDetail?.poster ?: intent.getStringExtra("ANIME_POSTER") ?: "",
-                url = intent.getStringExtra("ANIME_URL") ?: ""
+                poster = currentDetail?.poster ?: intent.getStringExtra("MEDIA_POSTER") ?: "",
+                url = intent.getStringExtra("MEDIA_URL") ?: ""
             )
             val isAdded = storage.toggleFavorite(item)
             updateFavoriteButtonState()
@@ -169,7 +168,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun updateFavoriteButtonState() {
-        val isFav = storage.isFavorite(animeId)
+        val isFav = storage.isFavorite(movieId)
         if (isFav) {
             binding.ivActionFavorite.setImageResource(R.drawable.ic_favorite_filled)
             binding.ivActionFavorite.setColorFilter(ContextCompat.getColor(this, R.color.primary))
@@ -221,8 +220,8 @@ class DetailActivity : AppCompatActivity() {
         serverAdapter = ServerAdapter { selectedIdx ->
             selectedServerIdx = selectedIdx
             currentDetail?.servers?.getOrNull(selectedIdx)?.let { server ->
-                val watchedSet = storage.getWatchedEpisodes(animeId)
-                val lastWatched = storage.getLastWatched(animeId)
+                val watchedSet = storage.getWatchedEpisodes(movieId)
+                val lastWatched = storage.getLastWatched(movieId)
                 episodeAdapter.submitList(server.episodes, watchedSet, lastWatched?.nid ?: -1)
                 binding.tvActionQuality.text = server.serverName.take(8)
             }
@@ -237,21 +236,21 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun playEpisode(episode: EpisodeItem) {
-        val lastWatched = storage.getLastWatched(animeId)
+        val lastWatched = storage.getLastWatched(movieId)
         val startPos = if (lastWatched != null && lastWatched.nid == episode.nid && lastWatched.positionMs > 1000L) {
             lastWatched.positionMs
         } else {
-            storage.getEpisodePosition(animeId, episode.nid)
+            storage.getEpisodePosition(movieId, episode.nid)
         }
         val intent = Intent(this, PlayerActivity::class.java).apply {
-            putExtra("ANIME_ID", episode.id)
-            putExtra("ANIME_TITLE", currentDetail?.title ?: intent.getStringExtra("ANIME_TITLE") ?: "")
-            putExtra("ANIME_POSTER", currentDetail?.poster ?: intent.getStringExtra("ANIME_POSTER") ?: "")
+            putExtra("MEDIA_ID", episode.id)
+            putExtra("MEDIA_TITLE", currentDetail?.title ?: intent.getStringExtra("MEDIA_TITLE") ?: "")
+            putExtra("MEDIA_POSTER", currentDetail?.poster ?: intent.getStringExtra("MEDIA_POSTER") ?: "")
             putExtra("EPISODE_NAME", episode.episode)
             putExtra("SID", episode.sid)
             putExtra("NID", episode.nid)
             putExtra("PLAY_URL", episode.playUrl)
-            putExtra("ANIME_URL", episode.playUrl)
+            putExtra("MEDIA_URL", episode.playUrl)
             if (startPos > 1000L) {
                 putExtra("START_POSITION", startPos)
             }
@@ -260,8 +259,8 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun refreshWatchedState() {
-        val watchedSet = storage.getWatchedEpisodes(animeId)
-        val lastWatched = storage.getLastWatched(animeId)
+        val watchedSet = storage.getWatchedEpisodes(movieId)
+        val lastWatched = storage.getLastWatched(movieId)
         currentDetail?.servers?.getOrNull(selectedServerIdx)?.let { server ->
             episodeAdapter.submitList(server.episodes, watchedSet, lastWatched?.nid ?: -1)
         }
@@ -280,7 +279,7 @@ class DetailActivity : AppCompatActivity() {
         }
     }
 
-    private fun bindDetail(detail: AnimeDetail) {
+    private fun bindDetail(detail: MovieDetail) {
         val isMovie = detail.status.equals("Movie", ignoreCase = true) || (detail.servers.size <= 1 && (detail.servers.firstOrNull()?.count ?: 0) <= 1)
         binding.tvDetailTitle.text = detail.title
         binding.tvDetailStatus.text = if (isMovie) "Movie HD" else detail.status.ifEmpty { "Series" }
@@ -297,7 +296,7 @@ class DetailActivity : AppCompatActivity() {
         val countryBadge = if (country.isNotEmpty()) {
             com.penonton.util.CountryUtils.formatCountry(country)
         } else {
-            com.penonton.util.CountryUtils.getCountryBadge(AnimeItem(detail.id, detail.title, "", "", "", ""))
+            com.penonton.util.CountryUtils.getCountryBadge(MovieItem(detail.id, detail.title, "", "", "", ""))
         }
 
         if (countryBadge.isNotEmpty()) {
@@ -324,8 +323,8 @@ class DetailActivity : AppCompatActivity() {
         // Set layout manager: 1 full-width column for movie, 4 columns for series episodes
         binding.rvEpisodes.layoutManager = GridLayoutManager(this, if (isMovie) 1 else 4)
 
-        val watchedSet = storage.getWatchedEpisodes(animeId)
-        val lastWatched = storage.getLastWatched(animeId)
+        val watchedSet = storage.getWatchedEpisodes(movieId)
+        val lastWatched = storage.getLastWatched(movieId)
         if (detail.servers.isNotEmpty()) {
             selectedServerIdx = 0
             serverAdapter.submitList(detail.servers, 0)

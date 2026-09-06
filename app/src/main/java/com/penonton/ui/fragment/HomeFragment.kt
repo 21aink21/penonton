@@ -12,8 +12,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.penonton.R
 import com.penonton.data.local.StorageManager
-import com.penonton.data.model.AnimeItem
-import com.penonton.data.parser.DonghuaParser
+import com.penonton.data.model.MovieItem
+import com.penonton.data.parser.Lk21Parser
 import com.penonton.databinding.FragmentHomeBinding
 import com.penonton.ui.activity.DetailActivity
 import com.penonton.ui.adapter.HomeAdapter
@@ -83,7 +83,7 @@ class HomeFragment : Fragment() {
             }
         }
 
-        binding.rvHomeAnime.apply {
+        binding.rvHomeContent.apply {
             layoutManager = glm
             adapter = homeAdapter
             setHasFixedSize(false)
@@ -104,29 +104,29 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun openDetail(anime: AnimeItem) {
+    private fun openDetail(anime: MovieItem) {
         startActivity(Intent(requireContext(), DetailActivity::class.java).apply {
-            putExtra("ANIME_ID", anime.id)
-            putExtra("ANIME_TITLE", anime.title)
-            putExtra("ANIME_POSTER", anime.poster)
-            putExtra("ANIME_URL", anime.url)
+            putExtra("MEDIA_ID", anime.id)
+            putExtra("MEDIA_TITLE", anime.title)
+            putExtra("MEDIA_POSTER", anime.poster)
+            putExtra("MEDIA_URL", anime.url)
         })
     }
 
     fun search(query: String) {
         binding.shimmerView.startShimmer()
         binding.shimmerView.visibility = View.VISIBLE
-        binding.rvHomeAnime.visibility = View.GONE
+        binding.rvHomeContent.visibility = View.GONE
         lifecycleScope.launch {
             try {
-                val results = DonghuaParser.search(query, 1)
+                val results = Lk21Parser.search(query, 1)
                 homeAdapter.setSearchResult(query, results)
             } catch (e: Exception) {
                 Log.e("HomeFragment", "Search error", e)
             } finally {
                 binding.shimmerView.stopShimmer()
                 binding.shimmerView.visibility = View.GONE
-                binding.rvHomeAnime.visibility = View.VISIBLE
+                binding.rvHomeContent.visibility = View.VISIBLE
             }
         }
     }
@@ -143,12 +143,12 @@ class HomeFragment : Fragment() {
         if (forceRefresh || homeAdapter.itemCount <= 1) {
             binding.shimmerView.startShimmer()
             binding.shimmerView.visibility = View.VISIBLE
-            binding.rvHomeAnime.visibility = View.GONE
+            binding.rvHomeContent.visibility = View.GONE
         }
         lifecycleScope.launch {
             try {
-                val rankings = DonghuaParser.getRankings(forceRefresh)
-                val latest = DonghuaParser.getLatest(1, forceRefresh)
+                val rankings = Lk21Parser.getRankings(forceRefresh)
+                val latest = Lk21Parser.getLatest(1, forceRefresh)
                 val history = storage.getHistory()
                 currentPage = 1
                 hasMorePages = latest.isNotEmpty()
@@ -158,7 +158,7 @@ class HomeFragment : Fragment() {
             } finally {
                 binding.shimmerView.stopShimmer()
                 binding.shimmerView.visibility = View.GONE
-                binding.rvHomeAnime.visibility = View.VISIBLE
+                binding.rvHomeContent.visibility = View.VISIBLE
                 binding.swipeRefresh.isRefreshing = false
             }
         }
@@ -172,7 +172,7 @@ class HomeFragment : Fragment() {
         lifecycleScope.launch {
             try {
                 val nextPage = currentPage + 1
-                val items = DonghuaParser.getLatest(nextPage)
+                val items = Lk21Parser.getLatest(nextPage)
                 if (items.isEmpty()) {
                     hasMorePages = false
                 } else {

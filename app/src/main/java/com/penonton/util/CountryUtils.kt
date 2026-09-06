@@ -1,6 +1,6 @@
 package com.penonton.util
 
-import com.penonton.data.model.AnimeItem
+import com.penonton.data.model.MovieItem
 
 object CountryUtils {
 
@@ -159,7 +159,7 @@ object CountryUtils {
         return countryRaw.trim().take(6).uppercase()
     }
 
-    fun getCountryBadge(item: AnimeItem): String {
+    fun getCountryBadge(item: MovieItem): String {
         if (item.country.isNotEmpty()) {
             return formatCountry(item.country)
         }

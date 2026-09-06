@@ -4,18 +4,18 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import androidx.recyclerview.widget.RecyclerView
-import com.penonton.data.model.AnimeItem
+import com.penonton.data.model.MovieItem
 import com.penonton.databinding.ItemHeroBannerBinding
 import com.penonton.util.CountryUtils
 import com.penonton.util.loadPoster
 
 class HeroBannerAdapter(
-    private val onItemClick: (AnimeItem) -> Unit
+    private val onItemClick: (MovieItem) -> Unit
 ) : RecyclerView.Adapter<HeroBannerAdapter.BannerViewHolder>() {
 
-    private val items = mutableListOf<AnimeItem>()
+    private val items = mutableListOf<MovieItem>()
 
-    fun submitList(newItems: List<AnimeItem>) {
+    fun submitList(newItems: List<MovieItem>) {
         items.clear()
         items.addAll(newItems)
         notifyDataSetChanged()
@@ -45,7 +45,7 @@ class HeroBannerAdapter(
     inner class BannerViewHolder(private val binding: ItemHeroBannerBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: AnimeItem, rank: Int) {
+        fun bind(item: MovieItem, rank: Int) {
             binding.tvBannerTitle.text = item.title
             binding.tvBannerRank.text = "🔥 Top #$rank"
 

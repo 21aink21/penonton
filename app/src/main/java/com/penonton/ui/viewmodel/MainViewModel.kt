@@ -4,14 +4,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.penonton.data.model.AnimeItem
-import com.penonton.data.parser.DonghuaParser
+import com.penonton.data.model.MovieItem
+import com.penonton.data.parser.Lk21Parser
 import kotlinx.coroutines.launch
 
 class MainViewModel : ViewModel() {
 
-    private val _animeList = MutableLiveData<List<AnimeItem>>()
-    val animeList: LiveData<List<AnimeItem>> = _animeList
+    private val _animeList = MutableLiveData<List<MovieItem>>()
+    val movieList: LiveData<List<MovieItem>> = _animeList
 
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
@@ -27,7 +27,7 @@ class MainViewModel : ViewModel() {
         _error.value = null
         viewModelScope.launch {
             try {
-                val items = DonghuaParser.getLatest(1)
+                val items = Lk21Parser.getLatest(1)
                 _animeList.value = items
             } catch (e: Exception) {
                 _error.value = e.message ?: "Gagal memuat katalog"
@@ -47,7 +47,7 @@ class MainViewModel : ViewModel() {
         _error.value = null
         viewModelScope.launch {
             try {
-                val items = DonghuaParser.search(query, 1)
+                val items = Lk21Parser.search(query, 1)
                 _animeList.value = items
             } catch (e: Exception) {
                 _error.value = e.message ?: "Gagal melakukan pencarian"

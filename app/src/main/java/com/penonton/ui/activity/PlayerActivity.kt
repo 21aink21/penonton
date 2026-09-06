@@ -32,7 +32,6 @@ import androidx.media3.ui.PlayerView
 import com.penonton.R
 import com.penonton.data.local.StorageManager
 import com.penonton.data.model.StreamResult
-import com.penonton.data.parser.DonghuaParser
 import com.penonton.databinding.ActivityPlayerBinding
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -43,7 +42,7 @@ class PlayerActivity : AppCompatActivity() {
     private var exoPlayer: ExoPlayer? = null
     private lateinit var storage: StorageManager
 
-    private var animeId: Int = 0
+    private var movieId: Int = 0
     private var animeTitle: String = ""
     private var episodeName: String = ""
     private var animePoster: String = ""
@@ -109,10 +108,10 @@ class PlayerActivity : AppCompatActivity() {
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
 
-        animeId = intent.getIntExtra("ANIME_ID", 0)
-        animeTitle = intent.getStringExtra("ANIME_TITLE") ?: ""
+        movieId = intent.getIntExtra("MEDIA_ID", 0)
+        animeTitle = intent.getStringExtra("MEDIA_TITLE") ?: ""
         episodeName = intent.getStringExtra("EPISODE_NAME") ?: ""
-        animePoster = intent.getStringExtra("ANIME_POSTER") ?: ""
+        animePoster = intent.getStringExtra("MEDIA_POSTER") ?: ""
         currentSid = intent.getIntExtra("SID", 1)
         currentNid = intent.getIntExtra("NID", 1)
 
@@ -120,8 +119,8 @@ class PlayerActivity : AppCompatActivity() {
         initialResumePositionMs = if (intentPos > 0L) {
             intentPos
         } else {
-            storage.getEpisodePosition(animeId, currentNid).takeIf { it > 0L }
-                ?: storage.getLastWatched(animeId)?.takeIf { it.nid == currentNid }?.positionMs
+            storage.getEpisodePosition(movieId, currentNid).takeIf { it > 0L }
+                ?: storage.getLastWatched(movieId)?.takeIf { it.nid == currentNid }?.positionMs
                 ?: 0L
         }
 
@@ -439,15 +438,11 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun loadStream() {
         binding.playerProgressBar.visibility = View.VISIBLE
-        val playUrl = intent.getStringExtra("PLAY_URL") ?: intent.getStringExtra("ANIME_URL")
+        val playUrl = intent.getStringExtra("PLAY_URL") ?: intent.getStringExtra("MEDIA_URL")
 
         lifecycleScope.launch {
             try {
-                val stream = try {
-                    com.penonton.data.parser.Lk21Parser.getStream(animeId, currentSid, currentNid, playUrl)
-                } catch (_: Exception) {
-                    DonghuaParser.getStream(animeId, currentSid, currentNid, playUrl)
-                }
+                val stream = com.penonton.data.parser.Lk21Parser.getStream(movieId, currentSid, currentNid, playUrl)
                 binding.playerProgressBar.visibility = View.GONE
 
                 if (!stream.m3u8Url.isNullOrEmpty()) {
@@ -476,8 +471,7 @@ class PlayerActivity : AppCompatActivity() {
             m3u8Url.contains("rumble.com") -> "https://rumble.com/"
             m3u8Url.contains("cdn.rumble.cloud") -> "https://rumble.com/"
             m3u8Url.contains("doubanio.com") -> "https://movie.douban.com/"
-            m3u8Url.contains("donghuafun.com") -> "https://donghuafun.com/"
-            else -> "https://playcdn.de/"
+                        else -> "https://playcdn.de/"
         }
 
         val dataSourceFactory = DefaultHttpDataSource.Factory()
@@ -579,7 +573,7 @@ class PlayerActivity : AppCompatActivity() {
                 val durMs = (durationSec * 1000).toLong()
                 if (posMs > 1000L) {
                     storage.saveHistory(
-                        animeId = animeId,
+                        movieId = movieId,
                         title = animeTitle,
                         poster = animePoster,
                         episodeName = episodeName,
@@ -603,7 +597,7 @@ class PlayerActivity : AppCompatActivity() {
                 val uri = request?.url ?: return true
                 val url = uri.toString()
 
-                val allowedHosts = listOf("donghuafun.com", "dailymotion.com", "geo.dailymotion.com", "dmcdn.net", "ksrteam.org", "rumble.com", "rumble.cloud", "ganjingworld.com", "ganjing.com")
+                val allowedHosts = listOf("videonode.de", "playcdn.de", "lk21official.cc", "nontondrama.my", "gudangvape.com", "dailymotion.com", "geo.dailymotion.com", "dmcdn.net", "rumble.com", "rumble.cloud")
                 val isHostAllowed = allowedHosts.any { uri.host?.contains(it) == true }
 
                 if (!isHostAllowed || url.startsWith("intent:") || url.startsWith("market:") || url.startsWith("whatsapp:") || url.startsWith("tg:")) {
@@ -713,7 +707,7 @@ class PlayerActivity : AppCompatActivity() {
             """.trimIndent()
         }
 
-        binding.webViewPlayer.loadDataWithBaseURL("https://donghuafun.com", htmlContent, "text/html", "UTF-8", null)
+        binding.webViewPlayer.loadDataWithBaseURL("https://tv12.lk21official.cc", htmlContent, "text/html", "UTF-8", null)
     }
 
     private fun startProgressSaver() {
@@ -732,7 +726,7 @@ class PlayerActivity : AppCompatActivity() {
             val dur = player.duration.takeIf { it > 0L } ?: 0L
             if (pos > 1000L) {
                 storage.saveHistory(
-                    animeId = animeId,
+                    movieId = movieId,
                     title = animeTitle,
                     poster = animePoster,
                     episodeName = episodeName,

@@ -2,32 +2,14 @@ package com.penonton.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.penonton.data.model.AnimeItem
+import com.penonton.data.model.MovieItem
 import com.penonton.data.model.WatchHistoryItem
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
 class StorageManager(context: Context) {
 
-    private val prefs: SharedPreferences = run {
-        val p = context.getSharedPreferences("lk21_prefs", Context.MODE_PRIVATE)
-        val old = context.getSharedPreferences("donghua_prefs", Context.MODE_PRIVATE)
-        if (old.all.isNotEmpty() && p.all.isEmpty()) {
-            val ed = p.edit()
-            old.all.forEach { (k, v) ->
-                when (v) {
-                    is String -> ed.putString(k, v)
-                    is Int -> ed.putInt(k, v)
-                    is Long -> ed.putLong(k, v)
-                    is Float -> ed.putFloat(k, v)
-                    is Boolean -> ed.putBoolean(k, v)
-                    is Set<*> -> @Suppress("UNCHECKED_CAST") ed.putStringSet(k, v as Set<String>)
-                }
-            }
-            ed.apply()
-        }
-        p
-    }
+    private val prefs: SharedPreferences = context.getSharedPreferences("penonton_prefs", Context.MODE_PRIVATE)
     private val gson = Gson()
 
     // ==========================================
@@ -35,7 +17,7 @@ class StorageManager(context: Context) {
     // ==========================================
 
     fun saveHistory(
-        animeId: Int,
+        movieId: Int,
         title: String,
         poster: String,
         episodeName: String,
@@ -45,19 +27,19 @@ class StorageManager(context: Context) {
         durationMs: Long
     ) {
         val list = getHistory().toMutableList()
-        val oldItem = list.firstOrNull { it.animeId == animeId }
-        list.removeAll { it.animeId == animeId }
+        val oldItem = list.firstOrNull { it.movieId == movieId }
+        list.removeAll { it.movieId == movieId }
 
         val finalDuration = if (durationMs > 0L) {
             durationMs
         } else {
             oldItem?.takeIf { it.durationMs > 0L }?.durationMs
-                ?: getEpisodeDuration(animeId, nid).takeIf { it > 0L }
+                ?: getEpisodeDuration(movieId, nid).takeIf { it > 0L }
                 ?: 0L
         }
 
         val item = WatchHistoryItem(
-            animeId,
+            movieId,
             title,
             poster,
             episodeName,
@@ -72,20 +54,20 @@ class StorageManager(context: Context) {
 
         prefs.edit()
             .putString(KEY_HISTORY, gson.toJson(list))
-            .putLong("ep_pos_${animeId}_$nid", positionMs)
-            .putLong("ep_dur_${animeId}_$nid", finalDuration)
+            .putLong("ep_pos_${movieId}_$nid", positionMs)
+            .putLong("ep_dur_${movieId}_$nid", finalDuration)
             .apply()
 
         // Also mark episode as watched
-        markEpisodeWatched(animeId, episodeName)
+        markEpisodeWatched(movieId, episodeName)
     }
 
-    fun getEpisodePosition(animeId: Int, nid: Int): Long {
-        return prefs.getLong("ep_pos_${animeId}_$nid", 0L)
+    fun getEpisodePosition(movieId: Int, nid: Int): Long {
+        return prefs.getLong("ep_pos_${movieId}_$nid", 0L)
     }
 
-    fun getEpisodeDuration(animeId: Int, nid: Int): Long {
-        return prefs.getLong("ep_dur_${animeId}_$nid", 0L)
+    fun getEpisodeDuration(movieId: Int, nid: Int): Long {
+        return prefs.getLong("ep_dur_${movieId}_$nid", 0L)
     }
 
     fun getHistory(): List<WatchHistoryItem> {
@@ -98,8 +80,8 @@ class StorageManager(context: Context) {
         }
     }
 
-    fun getLastWatched(animeId: Int): WatchHistoryItem? {
-        return getHistory().firstOrNull { it.animeId == animeId }
+    fun getLastWatched(movieId: Int): WatchHistoryItem? {
+        return getHistory().firstOrNull { it.movieId == movieId }
     }
 
     fun clearHistory() {
@@ -110,15 +92,15 @@ class StorageManager(context: Context) {
     // 2. Watched Episodes Tracker
     // ==========================================
 
-    fun markEpisodeWatched(animeId: Int, episodeName: String) {
-        val key = "${KEY_WATCHED_EPS}_$animeId"
+    fun markEpisodeWatched(movieId: Int, episodeName: String) {
+        val key = "${KEY_WATCHED_EPS}_$movieId"
         val set = prefs.getStringSet(key, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
         set.add(episodeName)
         prefs.edit().putStringSet(key, set).apply()
     }
 
-    fun getWatchedEpisodes(animeId: Int): Set<String> {
-        val key = "${KEY_WATCHED_EPS}_$animeId"
+    fun getWatchedEpisodes(movieId: Int): Set<String> {
+        val key = "${KEY_WATCHED_EPS}_$movieId"
         return prefs.getStringSet(key, emptySet()) ?: emptySet()
     }
 
@@ -126,7 +108,7 @@ class StorageManager(context: Context) {
     // 3. Favorites / Bookmarks
     // ==========================================
 
-    fun toggleFavorite(anime: AnimeItem): Boolean {
+    fun toggleFavorite(anime: MovieItem): Boolean {
         val list = getFavorites().toMutableList()
         val exists = list.any { it.id == anime.id }
         if (exists) {
@@ -138,14 +120,14 @@ class StorageManager(context: Context) {
         return !exists // Returns true if added, false if removed
     }
 
-    fun isFavorite(animeId: Int): Boolean {
-        return getFavorites().any { it.id == animeId }
+    fun isFavorite(movieId: Int): Boolean {
+        return getFavorites().any { it.id == movieId }
     }
 
-    fun getFavorites(): List<AnimeItem> {
+    fun getFavorites(): List<MovieItem> {
         val json = prefs.getString(KEY_FAVORITES, null) ?: return emptyList()
         return try {
-            val type = object : TypeToken<List<AnimeItem>>() {}.type
+            val type = object : TypeToken<List<MovieItem>>() {}.type
             gson.fromJson(json, type) ?: emptyList()
         } catch (_: Exception) {
             emptyList()

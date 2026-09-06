@@ -12,7 +12,7 @@ import com.penonton.data.local.StorageManager
 import com.penonton.databinding.FragmentLibraryBinding
 import com.penonton.ui.activity.DetailActivity
 import com.penonton.ui.activity.PlayerActivity
-import com.penonton.ui.adapter.AnimeAdapter
+import com.penonton.ui.adapter.MovieAdapter
 import com.penonton.ui.adapter.HistoryAdapter
 import com.google.android.material.tabs.TabLayout
 
@@ -23,7 +23,7 @@ class LibraryFragment : Fragment() {
 
     private lateinit var storage: StorageManager
     private lateinit var historyAdapter: HistoryAdapter
-    private lateinit var favoritesAdapter: AnimeAdapter
+    private lateinit var favoritesAdapter: MovieAdapter
 
     private var currentTab = 0 // 0=History, 1=Favorites
 
@@ -55,9 +55,9 @@ class LibraryFragment : Fragment() {
     private fun setupAdapters() {
         historyAdapter = HistoryAdapter { item ->
             val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
-                putExtra("ANIME_ID", item.animeId)
-                putExtra("ANIME_TITLE", item.title)
-                putExtra("ANIME_POSTER", item.poster)
+                putExtra("MEDIA_ID", item.movieId)
+                putExtra("MEDIA_TITLE", item.title)
+                putExtra("MEDIA_POSTER", item.poster)
                 putExtra("EPISODE_NAME", item.episodeName)
                 putExtra("SID", item.sid)
                 putExtra("NID", item.nid)
@@ -66,12 +66,12 @@ class LibraryFragment : Fragment() {
             startActivity(intent)
         }
 
-        favoritesAdapter = AnimeAdapter { anime ->
+        favoritesAdapter = MovieAdapter { anime ->
             val intent = Intent(requireContext(), DetailActivity::class.java).apply {
-                putExtra("ANIME_ID", anime.id)
-                putExtra("ANIME_TITLE", anime.title)
-                putExtra("ANIME_POSTER", anime.poster)
-                putExtra("ANIME_URL", anime.url)
+                putExtra("MEDIA_ID", anime.id)
+                putExtra("MEDIA_TITLE", anime.title)
+                putExtra("MEDIA_POSTER", anime.poster)
+                putExtra("MEDIA_URL", anime.url)
             }
             startActivity(intent)
         }

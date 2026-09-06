@@ -20,13 +20,13 @@
         </com.facebook.shimmer.ShimmerFrameLayout>
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvHomeAnime"
+            android:id="@+id/rvHomeContent"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingBottom="96dp"
             android:scrollbars="none"
-            tools:listitem="@layout/item_anime" />
+            tools:listitem="@layout/item_movie" />
 
     </FrameLayout>
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

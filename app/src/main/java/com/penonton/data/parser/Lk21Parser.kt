@@ -35,11 +35,11 @@ object Lk21Parser {
     private val gson = Gson()
 
     // Caches
-    private var cachedBanners: Pair<Long, List<AnimeItem>>? = null
-    private var cachedLatest: Pair<Long, List<AnimeItem>>? = null
+    private var cachedBanners: Pair<Long, List<MovieItem>>? = null
+    private var cachedLatest: Pair<Long, List<MovieItem>>? = null
     private var cachedSchedule: Pair<Long, List<WeekdaySchedule>>? = null
-    private var cachedRankings: Pair<Long, List<AnimeItem>>? = null
-    private val detailCache = LruCache<Int, AnimeDetail>(50)
+    private var cachedRankings: Pair<Long, List<MovieItem>>? = null
+    private val detailCache = LruCache<Int, MovieDetail>(50)
     private val idToUrlMap = HashMap<Int, String>()
     private val idToCountryMap = HashMap<Int, String>()
 
@@ -59,7 +59,7 @@ object Lk21Parser {
         }
     }
 
-    private fun parseCard(article: Element, baseUrl: String, explicitCountry: String = ""): AnimeItem? {
+    private fun parseCard(article: Element, baseUrl: String, explicitCountry: String = ""): MovieItem? {
         val a = article.selectFirst("figure a") ?: article.selectFirst("a[itemprop=url]") ?: return null
         val href = a.attr("href")
         if (href.isEmpty() || href == "#") return null
@@ -116,13 +116,13 @@ object Lk21Parser {
             poster = "$POSTER_BASE${poster.removePrefix("/")}"
         }
 
-        return AnimeItem(id, title, badge, rating, poster, fullUrl, year, country)
+        return MovieItem(id, title, badge, rating, poster, fullUrl, year, country)
     }
 
     // =========================================================================
     // 1. SEARCH VIA GUDANGVAPE REST API
     // =========================================================================
-    suspend fun search(query: String, page: Int = 1): List<AnimeItem> = withContext(Dispatchers.IO) {
+    suspend fun search(query: String, page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
         val encoded = URLEncoder.encode(query, "UTF-8")
         val url = "$SEARCH_API?s=$encoded&page=$page"
         val req = Request.Builder()
@@ -131,7 +131,7 @@ object Lk21Parser {
             .header("Referer", "$MOVIE_BASE/")
             .build()
 
-        val items = mutableListOf<AnimeItem>()
+        val items = mutableListOf<MovieItem>()
         try {
             client.newCall(req).execute().use { res ->
                 if (!res.isSuccessful) return@use
@@ -172,7 +172,7 @@ object Lk21Parser {
                     }
 
                     val country = idToCountryMap[id] ?: ""
-                    items.add(AnimeItem(id, title, badge, ratingVal, fullPoster, fullUrl, yearVal, country))
+                    items.add(MovieItem(id, title, badge, ratingVal, fullPoster, fullUrl, yearVal, country))
                 }
             }
         } catch (e: Exception) {
@@ -184,7 +184,7 @@ object Lk21Parser {
     // =========================================================================
     // 2. LATEST MOVIES
     // =========================================================================
-    suspend fun getLatest(page: Int = 1, forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+    suspend fun getLatest(page: Int = 1, forceRefresh: Boolean = false): List<MovieItem> = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         if (!forceRefresh && page == 1 && cachedLatest != null && (now - cachedLatest!!.first) < CACHE_EXPIRY_MS) {
             return@withContext cachedLatest!!.second
@@ -193,7 +193,7 @@ object Lk21Parser {
         val url = "$MOVIE_BASE/latest/page/$page"
         val html = fetchHtml(url)
         val doc = Jsoup.parse(html)
-        val items = mutableListOf<AnimeItem>()
+        val items = mutableListOf<MovieItem>()
 
         for (card in doc.select("article")) {
             parseCard(card, MOVIE_BASE)?.let { items.add(it) }
@@ -208,9 +208,9 @@ object Lk21Parser {
     // =========================================================================
     // 2.1 LATEST SERIES (NONTONDRAMA)
     // =========================================================================
-    private var cachedLatestSeries: Pair<Long, List<AnimeItem>>? = null
+    private var cachedLatestSeries: Pair<Long, List<MovieItem>>? = null
 
-    suspend fun getLatestSeries(page: Int = 1, forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+    suspend fun getLatestSeries(page: Int = 1, forceRefresh: Boolean = false): List<MovieItem> = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         if (!forceRefresh && page == 1 && cachedLatestSeries != null && (now - cachedLatestSeries!!.first) < CACHE_EXPIRY_MS) {
             return@withContext cachedLatestSeries!!.second
@@ -219,7 +219,7 @@ object Lk21Parser {
         val url = "$SERIES_BASE/latest-series/page/$page"
         val html = fetchHtml(url)
         val doc = Jsoup.parse(html)
-        val items = mutableListOf<AnimeItem>()
+        val items = mutableListOf<MovieItem>()
 
         for (card in doc.select("article")) {
             parseCard(card, SERIES_BASE)?.let { items.add(it) }
@@ -234,7 +234,7 @@ object Lk21Parser {
     // =========================================================================
     // 3. FEATURED BANNERS (MOVIES & SERIES)
     // =========================================================================
-    suspend fun getFeaturedBanners(forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+    suspend fun getFeaturedBanners(forceRefresh: Boolean = false): List<MovieItem> = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         if (!forceRefresh && cachedBanners != null && (now - cachedBanners!!.first) < CACHE_EXPIRY_MS) {
             return@withContext cachedBanners!!.second
@@ -242,7 +242,7 @@ object Lk21Parser {
 
         val html = fetchHtml(MOVIE_BASE)
         val doc = Jsoup.parse(html)
-        val items = mutableListOf<AnimeItem>()
+        val items = mutableListOf<MovieItem>()
 
         for (card in doc.select("div.featured-slider article, div.sliders article, article").take(8)) {
             parseCard(card, MOVIE_BASE)?.let { items.add(it) }
@@ -254,9 +254,9 @@ object Lk21Parser {
         items
     }
 
-    private var cachedSeriesBanners: Pair<Long, List<AnimeItem>>? = null
+    private var cachedSeriesBanners: Pair<Long, List<MovieItem>>? = null
 
-    suspend fun getFeaturedSeriesBanners(forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+    suspend fun getFeaturedSeriesBanners(forceRefresh: Boolean = false): List<MovieItem> = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         if (!forceRefresh && cachedSeriesBanners != null && (now - cachedSeriesBanners!!.first) < CACHE_EXPIRY_MS) {
             return@withContext cachedSeriesBanners!!.second
@@ -265,7 +265,7 @@ object Lk21Parser {
         val url = "$SERIES_BASE/top-series-today/page/1"
         val html = fetchHtml(url)
         val doc = Jsoup.parse(html)
-        val items = mutableListOf<AnimeItem>()
+        val items = mutableListOf<MovieItem>()
 
         for (card in doc.select("div.featured-slider article, div.sliders article, article").take(8)) {
             parseCard(card, SERIES_BASE)?.let { items.add(it) }
@@ -280,7 +280,7 @@ object Lk21Parser {
     // =========================================================================
     // 4. RANKINGS (TOP MOVIES & TOP SERIES)
     // =========================================================================
-    suspend fun getRankings(forceRefresh: Boolean = false, type: String = "movie"): List<AnimeItem> = withContext(Dispatchers.IO) {
+    suspend fun getRankings(forceRefresh: Boolean = false, type: String = "movie"): List<MovieItem> = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         if (type == "movie") {
             if (!forceRefresh && cachedRankings != null && (now - cachedRankings!!.first) < CACHE_EXPIRY_MS) {
@@ -289,7 +289,7 @@ object Lk21Parser {
             val url = "$MOVIE_BASE/populer/page/1"
             val html = fetchHtml(url)
             val doc = Jsoup.parse(html)
-            val items = mutableListOf<AnimeItem>()
+            val items = mutableListOf<MovieItem>()
 
             for (card in doc.select("article")) {
                 parseCard(card, MOVIE_BASE)?.let { items.add(it) }
@@ -304,7 +304,7 @@ object Lk21Parser {
             val url = "$SERIES_BASE/top-series-today/page/1"
             val html = fetchHtml(url)
             val doc = Jsoup.parse(html)
-            val items = mutableListOf<AnimeItem>()
+            val items = mutableListOf<MovieItem>()
 
             for (card in doc.select("article")) {
                 parseCard(card, SERIES_BASE)?.let { items.add(it) }
@@ -334,7 +334,7 @@ object Lk21Parser {
 
         val schedules = mutableListOf<WeekdaySchedule>()
         for ((idx, title, catUrl) in categories) {
-            val list = mutableListOf<AnimeItem>()
+            val list = mutableListOf<MovieItem>()
             val defaultCountry = when (idx) {
                 5 -> "Asian"
                 6 -> "United States"
@@ -366,7 +366,7 @@ object Lk21Parser {
     // =========================================================================
     // 6. DETAIL PAGE (MOVIE & SERIES)
     // =========================================================================
-    suspend fun getDetails(itemId: Int, fallbackUrl: String? = null, forceRefresh: Boolean = false): AnimeDetail = withContext(Dispatchers.IO) {
+    suspend fun getDetails(itemId: Int, fallbackUrl: String? = null, forceRefresh: Boolean = false): MovieDetail = withContext(Dispatchers.IO) {
         if (!fallbackUrl.isNullOrEmpty()) {
             idToUrlMap[itemId] = fallbackUrl
         }
@@ -510,7 +510,7 @@ object Lk21Parser {
             idToUrlMap[itemId] = pageUrl
         }
 
-        val detail = AnimeDetail(itemId, title, if (isSeries) "Series" else "Movie", poster, synopsis, meta, servers)
+        val detail = MovieDetail(itemId, title, if (isSeries) "Series" else "Movie", poster, synopsis, meta, servers)
         detailCache.put(itemId, detail)
         detail
     }
@@ -518,10 +518,10 @@ object Lk21Parser {
     // =========================================================================
     // 7. STREAM EXTRACTION (VIDEONODE -> PLAYCDN -> DIRECT HLS)
     // =========================================================================
-    suspend fun getStream(animeId: Int, sid: Int = 1, nid: Int = 1, fallbackUrl: String? = null): StreamResult = withContext(Dispatchers.IO) {
-        var playUrl = fallbackUrl?.takeIf { it.isNotEmpty() } ?: idToUrlMap[animeId] ?: ""
+    suspend fun getStream(movieId: Int, sid: Int = 1, nid: Int = 1, fallbackUrl: String? = null): StreamResult = withContext(Dispatchers.IO) {
+        var playUrl = fallbackUrl?.takeIf { it.isNotEmpty() } ?: idToUrlMap[movieId] ?: ""
         if (playUrl.isEmpty()) {
-            val cachedDetail = detailCache.get(animeId)
+            val cachedDetail = detailCache.get(movieId)
             if (cachedDetail != null) {
                 val ep = cachedDetail.servers.flatMap { it.episodes }.firstOrNull { it.nid == nid && it.sid == sid }
                     ?: cachedDetail.servers.firstOrNull()?.episodes?.firstOrNull()
@@ -621,7 +621,7 @@ object Lk21Parser {
         }
 
         StreamResult(
-            id = animeId,
+            id = movieId,
             sid = sid,
             nid = nid,
             provider = "playcdn",

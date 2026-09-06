@@ -2,7 +2,7 @@ package com.penonton.data.model
 
 import java.io.Serializable
 
-data class AnimeItem(
+data class MovieItem(
     val id: Int,
     val title: String,
     val latestEp: String,
@@ -13,7 +13,7 @@ data class AnimeItem(
     val country: String = ""
 ) : Serializable
 
-data class AnimeDetail(
+data class MovieDetail(
     val id: Int,
     val title: String,
     val status: String,
@@ -52,7 +52,7 @@ data class StreamResult(
 ) : Serializable
 
 data class WatchHistoryItem(
-    val animeId: Int,
+    val movieId: Int,
     val title: String,
     val poster: String,
     val episodeName: String,
@@ -66,5 +66,5 @@ data class WatchHistoryItem(
 data class WeekdaySchedule(
     val dayIndex: Int, // 1=Mon, 2=Tue, ..., 7=Sun
     val dayName: String, // Senin, Selasa, etc.
-    val animeList: List<AnimeItem>
+    val movieList: List<MovieItem>
 ) : Serializable

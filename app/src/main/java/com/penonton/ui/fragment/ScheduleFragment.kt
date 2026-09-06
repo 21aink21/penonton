@@ -12,8 +12,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.penonton.R
 import com.penonton.data.local.StorageManager
-import com.penonton.data.model.AnimeItem
-import com.penonton.data.parser.DonghuaParser
+import com.penonton.data.model.MovieItem
+import com.penonton.data.parser.Lk21Parser
 import com.penonton.databinding.FragmentScheduleBinding
 import com.penonton.ui.activity.DetailActivity
 import com.penonton.ui.activity.MainActivity
@@ -84,7 +84,7 @@ class ScheduleFragment : Fragment() {
             }
         }
 
-        binding.rvScheduleAnime.apply {
+        binding.rvScheduleContent.apply {
             layoutManager = glm
             adapter = seriesAdapter
             setHasFixedSize(false)
@@ -105,29 +105,29 @@ class ScheduleFragment : Fragment() {
         }
     }
 
-    private fun openDetail(anime: AnimeItem) {
+    private fun openDetail(anime: MovieItem) {
         startActivity(Intent(requireContext(), DetailActivity::class.java).apply {
-            putExtra("ANIME_ID", anime.id)
-            putExtra("ANIME_TITLE", anime.title)
-            putExtra("ANIME_POSTER", anime.poster)
-            putExtra("ANIME_URL", anime.url)
+            putExtra("MEDIA_ID", anime.id)
+            putExtra("MEDIA_TITLE", anime.title)
+            putExtra("MEDIA_POSTER", anime.poster)
+            putExtra("MEDIA_URL", anime.url)
         })
     }
 
     fun search(query: String) {
         binding.shimmerView.startShimmer()
         binding.shimmerView.visibility = View.VISIBLE
-        binding.rvScheduleAnime.visibility = View.GONE
+        binding.rvScheduleContent.visibility = View.GONE
         lifecycleScope.launch {
             try {
-                val results = DonghuaParser.search(query, 1)
+                val results = Lk21Parser.search(query, 1)
                 seriesAdapter.setSearchResult(query, results)
             } catch (e: Exception) {
                 Log.e("ScheduleFragment", "Search error", e)
             } finally {
                 binding.shimmerView.stopShimmer()
                 binding.shimmerView.visibility = View.GONE
-                binding.rvScheduleAnime.visibility = View.VISIBLE
+                binding.rvScheduleContent.visibility = View.VISIBLE
             }
         }
     }
@@ -144,12 +144,12 @@ class ScheduleFragment : Fragment() {
         if (forceRefresh || seriesAdapter.itemCount <= 1) {
             binding.shimmerView.startShimmer()
             binding.shimmerView.visibility = View.VISIBLE
-            binding.rvScheduleAnime.visibility = View.GONE
+            binding.rvScheduleContent.visibility = View.GONE
         }
         lifecycleScope.launch {
             try {
-                val seriesBanners = DonghuaParser.getFeaturedSeriesBanners(forceRefresh)
-                val latestSeries = DonghuaParser.getLatestSeries(1, forceRefresh)
+                val seriesBanners = Lk21Parser.getFeaturedSeriesBanners(forceRefresh)
+                val latestSeries = Lk21Parser.getLatestSeries(1, forceRefresh)
                 val history = storage.getHistory()
                 currentPage = 1
                 hasMorePages = latestSeries.isNotEmpty()
@@ -164,7 +164,7 @@ class ScheduleFragment : Fragment() {
             } finally {
                 binding.shimmerView.stopShimmer()
                 binding.shimmerView.visibility = View.GONE
-                binding.rvScheduleAnime.visibility = View.VISIBLE
+                binding.rvScheduleContent.visibility = View.VISIBLE
                 binding.swipeRefresh.isRefreshing = false
             }
         }
@@ -178,7 +178,7 @@ class ScheduleFragment : Fragment() {
         lifecycleScope.launch {
             try {
                 val nextPage = currentPage + 1
-                val items = DonghuaParser.getLatestSeries(nextPage)
+                val items = Lk21Parser.getLatestSeries(nextPage)
                 if (items.isEmpty()) {
                     hasMorePages = false
                 } else {

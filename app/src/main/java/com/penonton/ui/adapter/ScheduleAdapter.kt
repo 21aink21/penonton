@@ -4,18 +4,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.penonton.data.model.AnimeItem
+import com.penonton.data.model.MovieItem
 import com.penonton.databinding.ItemScheduleBinding
 import com.penonton.util.CountryUtils
 import com.penonton.util.loadPoster
 
 class ScheduleAdapter(
-    private val onItemClick: (AnimeItem) -> Unit
+    private val onItemClick: (MovieItem) -> Unit
 ) : RecyclerView.Adapter<ScheduleAdapter.ScheduleViewHolder>() {
 
-    private val items = mutableListOf<AnimeItem>()
+    private val items = mutableListOf<MovieItem>()
 
-    fun submitList(newItems: List<AnimeItem>) {
+    fun submitList(newItems: List<MovieItem>) {
         items.clear()
         items.addAll(newItems)
         notifyDataSetChanged()
@@ -35,7 +35,7 @@ class ScheduleAdapter(
     inner class ScheduleViewHolder(private val binding: ItemScheduleBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: AnimeItem) {
+        fun bind(item: MovieItem) {
             binding.tvTitle.text = item.title
 
             if (item.latestEp.isNotEmpty()) {

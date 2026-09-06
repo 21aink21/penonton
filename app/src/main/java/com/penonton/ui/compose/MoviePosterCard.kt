@@ -27,7 +27,7 @@ import coil.request.ImageRequest
  * Komponen Poster Anime Jetpack Compose dengan Palette API & Custom coloredShadow Modifier
  */
 @Composable
-fun AnimePosterCard(
+fun MoviePosterCard(
     posterUrl: String,
     title: String = "",
     rating: String = "",

@@ -5,19 +5,19 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.penonton.R
-import com.penonton.data.model.AnimeItem
+import com.penonton.data.model.MovieItem
 import com.penonton.databinding.ItemRankingBinding
 import com.penonton.util.CountryUtils
 import com.penonton.util.loadPoster
 
 class RankingAdapter(
-    private val onItemClick: (AnimeItem) -> Unit
+    private val onItemClick: (MovieItem) -> Unit
 ) : RecyclerView.Adapter<RankingAdapter.RankingViewHolder>() {
 
-    private val items = mutableListOf<AnimeItem>()
+    private val items = mutableListOf<MovieItem>()
 
     
-    fun submitList(newItems: List<AnimeItem>) {
+    fun submitList(newItems: List<MovieItem>) {
         items.clear()
         items.addAll(newItems)
         notifyDataSetChanged()
@@ -37,7 +37,7 @@ class RankingAdapter(
     inner class RankingViewHolder(private val binding: ItemRankingBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: AnimeItem, rank: Int) {
+        fun bind(item: MovieItem, rank: Int) {
             binding.tvRankNumber.text = rank.toString()
             binding.tvRankTitle.text = item.title
 

@@ -4,14 +4,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.penonton.data.model.AnimeDetail
-import com.penonton.data.parser.DonghuaParser
+import com.penonton.data.model.MovieDetail
+import com.penonton.data.parser.Lk21Parser
 import kotlinx.coroutines.launch
 
 class DetailViewModel : ViewModel() {
 
-    private val _detail = MutableLiveData<AnimeDetail?>()
-    val detail: LiveData<AnimeDetail?> = _detail
+    private val _detail = MutableLiveData<MovieDetail?>()
+    val detail: LiveData<MovieDetail?> = _detail
 
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
@@ -19,12 +19,12 @@ class DetailViewModel : ViewModel() {
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
-    fun loadDetail(animeId: Int, url: String? = null) {
+    fun loadDetail(movieId: Int, url: String? = null) {
         _isLoading.value = true
         _error.value = null
         viewModelScope.launch {
             try {
-                val data = DonghuaParser.getDetails(animeId, url)
+                val data = Lk21Parser.getDetails(movieId, url)
                 _detail.value = data
             } catch (e: Exception) {
                 _error.value = e.message ?: "Gagal memuat detail"

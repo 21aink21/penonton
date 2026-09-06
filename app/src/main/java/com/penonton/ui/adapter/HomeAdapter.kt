@@ -10,9 +10,9 @@ import android.view.inputmethod.EditorInfo
 import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import com.penonton.data.model.AnimeItem
+import com.penonton.data.model.MovieItem
 import com.penonton.data.model.WatchHistoryItem
-import com.penonton.databinding.ItemAnimeBinding
+import com.penonton.databinding.ItemMovieBinding
 import com.penonton.databinding.ItemContinueWatchingBinding
 import com.penonton.databinding.ItemHomeBannerContainerBinding
 import com.penonton.databinding.ItemHomeContinueWatchingBinding
@@ -25,8 +25,8 @@ import com.penonton.util.loadPoster
 import com.google.android.material.tabs.TabLayoutMediator
 
 class HomeAdapter(
-    private val onAnimeClick: (AnimeItem) -> Unit,
-    private val onBannerClick: (AnimeItem) -> Unit,
+    private val onAnimeClick: (MovieItem) -> Unit,
+    private val onBannerClick: (MovieItem) -> Unit,
     private val onBannerSelected: (String) -> Unit = {},
     private val onSearchSubmit: (String) -> Unit,
     private val onSearchClear: () -> Unit,
@@ -44,8 +44,8 @@ class HomeAdapter(
         const val TYPE_LOADING = 6
     }
 
-    private val banners = mutableListOf<AnimeItem>()
-    private val animeList = mutableListOf<AnimeItem>()
+    private val banners = mutableListOf<MovieItem>()
+    private val movieList = mutableListOf<MovieItem>()
     private val continueWatching = mutableListOf<WatchHistoryItem>()
     private var headerTitle: String = defaultHeaderTitle
     private var currentSearchQuery: String = ""
@@ -55,8 +55,8 @@ class HomeAdapter(
     // ── Public API ──────────────────────────────────────────────────────────
 
     fun setData(
-        newBanners: List<AnimeItem>,
-        newAnime: List<AnimeItem>,
+        newBanners: List<MovieItem>,
+        newAnime: List<MovieItem>,
         history: List<WatchHistoryItem> = emptyList(),
         customTitle: String? = null
     ) {
@@ -64,16 +64,16 @@ class HomeAdapter(
         currentSearchQuery = ""
         headerTitle = customTitle ?: defaultHeaderTitle
         banners.clear(); banners.addAll(newBanners)
-        animeList.clear(); animeList.addAll(newAnime)
+        movieList.clear(); movieList.addAll(newAnime)
         continueWatching.clear(); continueWatching.addAll(history.take(10))
         isLoadingMore = false
         notifyDataSetChanged()
     }
 
-    fun appendAnime(newItems: List<AnimeItem>) {
+    fun appendAnime(newItems: List<MovieItem>) {
         if (newItems.isEmpty()) return
         val startPos = itemCount - if (isLoadingMore) 1 else 0
-        animeList.addAll(newItems)
+        movieList.addAll(newItems)
         notifyItemRangeInserted(startPos, newItems.size)
     }
 
@@ -84,13 +84,13 @@ class HomeAdapter(
         else notifyItemRemoved(itemCount)
     }
 
-    fun setSearchResult(query: String, results: List<AnimeItem>) {
+    fun setSearchResult(query: String, results: List<MovieItem>) {
         isSearching = true
         currentSearchQuery = query
         headerTitle = "Hasil Pencarian: $query"
         banners.clear()
         continueWatching.clear()
-        animeList.clear(); animeList.addAll(results)
+        movieList.clear(); movieList.addAll(results)
         isLoadingMore = false
         notifyDataSetChanged()
     }
@@ -131,7 +131,7 @@ class HomeAdapter(
         count++ // search
         if (hasContinue()) count += 2 // history header + continue
         count++ // anime header
-        count += animeList.size
+        count += movieList.size
         if (isLoadingMore) count++ // loading footer
         return count
     }
@@ -145,7 +145,7 @@ class HomeAdapter(
             TYPE_CONTINUE -> ContinueWatchingViewHolder(ItemHomeContinueWatchingBinding.inflate(inflater, parent, false))
             TYPE_HEADER   -> HeaderViewHolder(ItemHomeHeaderBinding.inflate(inflater, parent, false))
             TYPE_LOADING  -> LoadingViewHolder(ItemLoadingFooterBinding.inflate(inflater, parent, false))
-            else          -> AnimeViewHolder(ItemAnimeBinding.inflate(inflater, parent, false))
+            else          -> MovieViewHolder(ItemMovieBinding.inflate(inflater, parent, false))
         }
     }
 
@@ -157,9 +157,9 @@ class HomeAdapter(
             is ContinueWatchingViewHolder -> holder.bind(continueWatching)
             is HeaderViewHolder        -> holder.bind(headerTitle)
             is LoadingViewHolder       -> { /* spinner, no binding needed */ }
-            is AnimeViewHolder -> {
+            is MovieViewHolder -> {
                 val idx = position - animeStartPos()
-                if (idx in animeList.indices) holder.bind(animeList[idx])
+                if (idx in movieList.indices) holder.bind(movieList[idx])
             }
         }
     }
@@ -200,7 +200,7 @@ class HomeAdapter(
                 }
             })
         }
-        fun bind(items: List<AnimeItem>) {
+        fun bind(items: List<MovieItem>) {
             bannerAdapter.submitList(items)
             if (items.isNotEmpty()) {
                 val cur = binding.vpFeatured.currentItem.coerceIn(0, items.size - 1)
@@ -263,7 +263,7 @@ class HomeAdapter(
                 val card = ItemContinueWatchingBinding.inflate(inflater, binding.llContinueWatchingCards, false)
                 card.ivCwPoster.loadPoster(item.poster)
 
-                val dummyItem = AnimeItem(id = item.animeId, title = item.title, latestEp = item.episodeName, rating = "", poster = item.poster, url = "")
+                val dummyItem = MovieItem(id = item.movieId, title = item.title, latestEp = item.episodeName, rating = "", poster = item.poster, url = "")
                 val countryBadge = CountryUtils.getCountryBadge(dummyItem)
                 if (countryBadge.isNotEmpty()) {
                     card.tvCwCountry.visibility = View.VISIBLE
@@ -291,9 +291,9 @@ class HomeAdapter(
 
                 card.root.setOnClickListener {
                     ctx.startActivity(Intent(ctx, PlayerActivity::class.java).apply {
-                        putExtra("ANIME_ID", item.animeId)
-                        putExtra("ANIME_TITLE", item.title)
-                        putExtra("ANIME_POSTER", item.poster)
+                        putExtra("MEDIA_ID", item.movieId)
+                        putExtra("MEDIA_TITLE", item.title)
+                        putExtra("MEDIA_POSTER", item.poster)
                         putExtra("EPISODE_NAME", item.episodeName)
                         putExtra("SID", item.sid)
                         putExtra("NID", item.nid)
@@ -310,9 +310,9 @@ class HomeAdapter(
         fun bind(title: String) { binding.tvSectionHeader.text = title }
     }
 
-    inner class AnimeViewHolder(private val binding: ItemAnimeBinding) :
+    inner class MovieViewHolder(private val binding: ItemMovieBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: AnimeItem) {
+        fun bind(item: MovieItem) {
             binding.tvTitle.text = item.title
             if (item.latestEp.isNotEmpty()) { binding.tvLatestEp.visibility = View.VISIBLE; binding.tvLatestEp.text = item.latestEp } else binding.tvLatestEp.visibility = View.GONE
             if (item.rating.isNotEmpty()) { binding.layoutRating.visibility = View.VISIBLE; binding.tvRating.text = item.rating } else binding.layoutRating.visibility = View.GONE
