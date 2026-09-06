@@ -15,8 +15,9 @@ object GradientBackground {
     fun apply(activity: Activity) {
         val bg = createDrawable()
         activity.window.decorView.background = bg
-        activity.window.statusBarColor = COLOR_BASE
-        activity.window.navigationBarColor = COLOR_BASE
+        activity.window.statusBarColor = android.graphics.Color.TRANSPARENT
+        activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(activity.window, false)
     }
 
     fun apply(view: View) {

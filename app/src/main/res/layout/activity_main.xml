@@ -6,12 +6,12 @@
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
 
-    <!-- Top-to-Search Dynamic Ambient Backdrop (Duplicate Layer with 30% Blur & 70% Opacity fading to Search Box) -->
+    <!-- Top-to-Search Dynamic Ambient Backdrop (Duplicate Layer with 30% Blur & 70% Opacity fading behind status bar) -->
     <com.penonton.ui.widget.FadingImageView
         android:id="@+id/ivDynamicHomeBackdrop"
         android:layout_width="match_parent"
-        android:layout_height="440dp"
-        android:alpha="0.70"
+        android:layout_height="480dp"
+        android:alpha="0.75"
         android:importantForAccessibility="no"
         android:scaleType="centerCrop"
         app:layout_constraintTop_toTopOf="parent"

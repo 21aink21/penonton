@@ -32,12 +32,41 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        GradientBackground.apply(this)
+        setupEdgeToEdge()
         setupAmbientBackdrop()
         setupFragments()
         setupBottomNav()
         setupLogoStyle()
         setupHeaderSearch()
+    }
+
+    private fun setupEdgeToEdge() {
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+
+        // Apply status bar top insets to mainHeader so it floats right under status bar icons
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(binding.mainHeader) { view, windowInsets ->
+            val statusBars = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+            val density = resources.displayMetrics.density
+            view.setPadding(
+                (16 * density).toInt(),
+                statusBars.top + (8 * density).toInt(),
+                (16 * density).toInt(),
+                (4 * density).toInt()
+            )
+            windowInsets
+        }
+
+        // Apply navigation bar bottom insets to bottomNavContainer
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavContainer) { view, windowInsets ->
+            val navBars = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            val density = resources.displayMetrics.density
+            val params = view.layoutParams as? androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            params?.bottomMargin = navBars.bottom + (12 * density).toInt()
+            view.layoutParams = params
+            windowInsets
+        }
     }
 
     private fun setupAmbientBackdrop() {
