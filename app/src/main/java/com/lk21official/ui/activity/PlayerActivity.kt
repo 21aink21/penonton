@@ -68,9 +68,11 @@ class PlayerActivity : AppCompatActivity() {
     private var initialTouchY = 0f
     private var isLeftSwipe = false
     private var isHorizontalSwipe = false
+    private var isVerticalSwipe = false
     private var initialPositionMs = 0L
     private var targetSeekPositionMs = 0L
     private var videoDurationMs = 0L
+    private var gestureDetector: GestureDetector? = null
 
     // 2X Speed Press & Hold variables
     private var isFastForwarding = false
@@ -225,9 +227,8 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     private fun setupGestures() {
-        val gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 if (isScreenLocked) return false
                 if (binding.playerView.isControllerFullyVisible) {
@@ -240,8 +241,8 @@ class PlayerActivity : AppCompatActivity() {
 
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 if (isScreenLocked) return false
-                val screenWidth = binding.playerRoot.width
-                if (e.x < screenWidth / 2) {
+                val screenWidth = binding.playerRoot.width.toFloat().coerceAtLeast(1f)
+                if (e.x < screenWidth / 2f) {
                     exoPlayer?.let {
                         val newPos = (it.currentPosition - 10000).coerceAtLeast(0)
                         it.seekTo(newPos)
@@ -258,7 +259,7 @@ class PlayerActivity : AppCompatActivity() {
             }
 
             override fun onLongPress(e: MotionEvent) {
-                if (isScreenLocked || isHorizontalSwipe) return
+                if (isScreenLocked || isHorizontalSwipe || isVerticalSwipe) return
                 exoPlayer?.let { player ->
                     if (player.isPlaying) {
                         isFastForwarding = true
@@ -270,33 +271,45 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
         })
+    }
 
-        binding.playerRoot.setOnTouchListener { _, event ->
-            if (isScreenLocked) return@setOnTouchListener false
-            gestureDetector.onTouchEvent(event)
-
-            val screenWidth = binding.playerRoot.width
-            val screenHeight = binding.playerRoot.height
-
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    initialTouchX = event.x
-                    initialTouchY = event.y
-                    isLeftSwipe = event.x < screenWidth / 2
-                    isHorizontalSwipe = false
-                    initialPositionMs = exoPlayer?.currentPosition ?: 0L
-                    videoDurationMs = exoPlayer?.duration?.coerceAtLeast(1L) ?: 1L
-                    targetSeekPositionMs = initialPositionMs
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (isScreenLocked) {
+            val unlockView = binding.btnUnlock
+            if (unlockView.visibility == View.VISIBLE) {
+                val rect = android.graphics.Rect()
+                unlockView.getGlobalVisibleRect(rect)
+                if (rect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
+                    return super.dispatchTouchEvent(ev)
                 }
-                MotionEvent.ACTION_MOVE -> {
-                    if (isFastForwarding) return@setOnTouchListener false
+            }
+            return true
+        }
 
-                    val deltaX = event.x - initialTouchX
-                    val deltaY = event.y - initialTouchY
+        val handledByDetector = gestureDetector?.onTouchEvent(ev) ?: false
 
-                    if (abs(deltaX) > abs(deltaY) && abs(deltaX) > 35) {
+        val screenWidth = binding.playerRoot.width.toFloat().coerceAtLeast(1f)
+        val screenHeight = binding.playerRoot.height.toFloat().coerceAtLeast(1f)
+
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                initialTouchX = ev.rawX
+                initialTouchY = ev.rawY
+                isLeftSwipe = ev.rawX < (screenWidth / 2f)
+                isHorizontalSwipe = false
+                isVerticalSwipe = false
+                initialPositionMs = exoPlayer?.currentPosition ?: 0L
+                videoDurationMs = exoPlayer?.duration?.coerceAtLeast(1L) ?: 1L
+                targetSeekPositionMs = initialPositionMs
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (!isFastForwarding) {
+                    val deltaX = ev.rawX - initialTouchX
+                    val deltaY = ev.rawY - initialTouchY
+
+                    // 1. Horizontal Seek Scrubbing Gesture
+                    if (!isVerticalSwipe && abs(deltaX) > 30 && abs(deltaX) > abs(deltaY) * 1.1f) {
                         isHorizontalSwipe = true
-
                         val seekDeltaMs = ((deltaX / screenWidth) * 90000).toLong()
                         targetSeekPositionMs = (initialPositionMs + seekDeltaMs).coerceIn(0L, videoDurationMs)
 
@@ -306,43 +319,60 @@ class PlayerActivity : AppCompatActivity() {
                         val iconRes = if (diffSeconds >= 0) R.drawable.ic_skip_next else R.drawable.ic_skip_previous
 
                         showHud(iconRes, "$sign\n[$timeStr]")
+                        return true
                     }
-                    else if (!isHorizontalSwipe && abs(deltaY) > 30) {
-                        val percentDelta = -deltaY / screenHeight.toFloat()
+                    // 2. Vertical Brightness / Volume Gesture
+                    else if (!isHorizontalSwipe && abs(deltaY) > 25 && abs(deltaY) > abs(deltaX)) {
+                        isVerticalSwipe = true
+                        val percentDelta = -deltaY / screenHeight
                         if (isLeftSwipe) {
                             val lp = window.attributes
                             val currentBrightness = if (lp.screenBrightness < 0) 0.5f else lp.screenBrightness
-                            val newBrightness = (currentBrightness + percentDelta * 0.1f).coerceIn(0.01f, 1.0f)
+                            val newBrightness = (currentBrightness + percentDelta * 0.08f).coerceIn(0.01f, 1.0f)
                             lp.screenBrightness = newBrightness
                             window.attributes = lp
                             showHud(R.drawable.ic_brightness, "Kecerahan: ${(newBrightness * 100).toInt()}%")
                         } else {
                             val currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-                            val volChange = (percentDelta * maxVolume * 0.5f).toInt()
+                            val volChange = (percentDelta * maxVolume * 0.4f).toInt()
                             val newVol = (currentVol + volChange).coerceIn(0, maxVolume)
                             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVol, 0)
                             val volPercent = ((newVol.toFloat() / maxVolume) * 100).toInt()
                             showHud(R.drawable.ic_volume, "Volume: $volPercent%")
                         }
-                    }
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if (isFastForwarding) {
-                        exoPlayer?.playbackParameters = PlaybackParameters(previousPlaybackSpeed)
-                        isFastForwarding = false
-                        showHud(R.drawable.ic_speed, "${previousPlaybackSpeed}x Normal", autoHide = true)
-                    }
-
-                    if (isHorizontalSwipe) {
-                        exoPlayer?.seekTo(targetSeekPositionMs)
-                        hudHandler.removeCallbacks(hideHudRunnable)
-                        hudHandler.postDelayed(hideHudRunnable, 600)
-                        isHorizontalSwipe = false
+                        return true
                     }
                 }
             }
-            false
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                if (isFastForwarding) {
+                    exoPlayer?.playbackParameters = PlaybackParameters(previousPlaybackSpeed)
+                    isFastForwarding = false
+                    showHud(R.drawable.ic_speed, "${previousPlaybackSpeed}x Normal", autoHide = true)
+                }
+
+                if (isHorizontalSwipe) {
+                    exoPlayer?.seekTo(targetSeekPositionMs)
+                    hudHandler.removeCallbacks(hideHudRunnable)
+                    hudHandler.postDelayed(hideHudRunnable, 600)
+                    isHorizontalSwipe = false
+                    return true
+                }
+
+                if (isVerticalSwipe) {
+                    isVerticalSwipe = false
+                    hudHandler.removeCallbacks(hideHudRunnable)
+                    hudHandler.postDelayed(hideHudRunnable, 600)
+                    return true
+                }
+            }
         }
+
+        if (handledByDetector || isHorizontalSwipe || isVerticalSwipe) {
+            return true
+        }
+
+        return super.dispatchTouchEvent(ev)
     }
 
     private fun formatTime(ms: Long): String {
