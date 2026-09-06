@@ -28,6 +28,7 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
 import com.lk21official.R
 import com.lk21official.data.local.StorageManager
 import com.lk21official.data.model.StreamResult
@@ -128,6 +129,31 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun setupPlayerControls() {
+        // Auto-hide controller & top header buttons after 3.5 seconds
+        binding.playerView.controllerShowTimeoutMs = 3500
+        binding.playerView.setControllerVisibilityListener(PlayerView.ControllerVisibilityListener { visibility ->
+            if (isScreenLocked) return@ControllerVisibilityListener
+            if (visibility == View.VISIBLE) {
+                binding.playerHeader.animate().cancel()
+                binding.playerHeader.visibility = View.VISIBLE
+                binding.playerHeader.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setDuration(250)
+                    .start()
+            } else {
+                binding.playerHeader.animate().cancel()
+                binding.playerHeader.animate()
+                    .alpha(0f)
+                    .translationY(-binding.playerHeader.height.toFloat().coerceAtLeast(60f))
+                    .setDuration(250)
+                    .withEndAction {
+                        binding.playerHeader.visibility = View.GONE
+                    }
+                    .start()
+            }
+        })
+
         // 1. Aspect Ratio Toggle
         binding.btnAspectRatio.setOnClickListener {
             currentAspectRatioIdx = (currentAspectRatioIdx + 1) % aspectRatios.size
@@ -161,6 +187,7 @@ class PlayerActivity : AppCompatActivity() {
         binding.btnLock.setOnClickListener {
             isScreenLocked = true
             binding.playerHeader.visibility = View.GONE
+            binding.playerView.hideController()
             binding.playerView.useController = false
             binding.btnUnlock.visibility = View.VISIBLE
             showHud(R.drawable.ic_lock, "Layar Terkunci")
@@ -168,8 +195,8 @@ class PlayerActivity : AppCompatActivity() {
 
         binding.btnUnlock.setOnClickListener {
             isScreenLocked = false
-            binding.playerHeader.visibility = View.VISIBLE
             binding.playerView.useController = true
+            binding.playerView.showController()
             binding.btnUnlock.visibility = View.GONE
             showHud(R.drawable.ic_lock_open, "Layar Terbuka")
         }
@@ -201,6 +228,16 @@ class PlayerActivity : AppCompatActivity() {
     @SuppressLint("ClickableViewAccessibility")
     private fun setupGestures() {
         val gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                if (isScreenLocked) return false
+                if (binding.playerView.isControllerFullyVisible) {
+                    binding.playerView.hideController()
+                } else {
+                    binding.playerView.showController()
+                }
+                return true
+            }
+
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 if (isScreenLocked) return false
                 val screenWidth = binding.playerRoot.width
