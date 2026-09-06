@@ -331,7 +331,11 @@ class PlayerActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val stream = DonghuaParser.getStream(animeId, currentSid, currentNid)
+                val stream = try {
+                    com.donghuaz.data.parser.Lk21Parser.getStream(animeId, currentSid, currentNid)
+                } catch (_: Exception) {
+                    DonghuaParser.getStream(animeId, currentSid, currentNid)
+                }
                 binding.playerProgressBar.visibility = View.GONE
 
                 if (!stream.m3u8Url.isNullOrEmpty()) {
@@ -353,11 +357,15 @@ class PlayerActivity : AppCompatActivity() {
         binding.playerView.visibility = View.VISIBLE
 
         val referer = when {
+            m3u8Url.contains("playcdn.de") -> "https://playcdn.de/"
+            m3u8Url.contains("videonode.de") -> "https://videonode.de/"
+            m3u8Url.contains("lk21") -> "https://tv12.lk21official.cc/"
+            m3u8Url.contains("nontondrama") -> "https://tv9.nontondrama.my/"
             m3u8Url.contains("rumble.com") -> "https://rumble.com/"
             m3u8Url.contains("cdn.rumble.cloud") -> "https://rumble.com/"
             m3u8Url.contains("doubanio.com") -> "https://movie.douban.com/"
             m3u8Url.contains("donghuafun.com") -> "https://donghuafun.com/"
-            else -> "https://donghuafun.com/"
+            else -> "https://playcdn.de/"
         }
 
         val dataSourceFactory = DefaultHttpDataSource.Factory()

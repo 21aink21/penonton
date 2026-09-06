@@ -1,13 +1,13 @@
 <!-- res/values/strings.xml -->
 <resources>
-    <string name="app_name">ERVANIME3d</string>
-    <string name="search_hint">Cari donghua favorit...</string>
-    <string name="latest_updates">Rilis Terbaru</string>
+    <string name="app_name">LK21 &amp; NontonDrama</string>
+    <string name="search_hint">Cari film atau serial drama...</string>
+    <string name="latest_updates">Film &amp; Series Terbaru</string>
     <string name="search_results">Hasil Pencarian</string>
-    <string name="episodes">Daftar Episode</string>
+    <string name="episodes">Pilihan Season &amp; Episode</string>
     <string name="synopsis">Sinopsis</string>
-    <string name="servers">Pilihan Server</string>
-    <string name="no_data">Tidak ada data ditemukan</string>
+    <string name="servers">Pilihan Server Player</string>
+    <string name="no_data">Tidak ada film atau serial ditemukan</string>
     <string name="error_loading">Gagal memuat data, silakan coba lagi</string>
     <string name="play_now">Tonton Sekarang</string>
 </resources>

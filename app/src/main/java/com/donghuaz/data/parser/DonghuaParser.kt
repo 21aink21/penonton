@@ -82,6 +82,11 @@ object DonghuaParser {
     }
 
     suspend fun search(query: String, page: Int = 1): List<AnimeItem> = withContext(Dispatchers.IO) {
+        try {
+            val results = Lk21Parser.search(query, page)
+            if (results.isNotEmpty()) return@withContext results
+        } catch (_: Exception) {}
+
         val encoded = URLEncoder.encode(query, "UTF-8")
         val url = "$BASE_URL/index.php/vod/search/page/$page/wd/$encoded.html"
         val html = fetchHtml(url)
@@ -95,6 +100,11 @@ object DonghuaParser {
     }
 
     suspend fun getLatest(page: Int = 1, forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+        try {
+            val results = Lk21Parser.getLatest(page, forceRefresh)
+            if (results.isNotEmpty()) return@withContext results
+        } catch (_: Exception) {}
+
         val now = System.currentTimeMillis()
         if (!forceRefresh && page == 1 && cachedLatest != null && (now - cachedLatest!!.first) < CACHE_EXPIRY_MS) {
             return@withContext cachedLatest!!.second
@@ -116,6 +126,11 @@ object DonghuaParser {
     }
 
     suspend fun getFeaturedBanners(forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+        try {
+            val results = Lk21Parser.getFeaturedBanners(forceRefresh)
+            if (results.isNotEmpty()) return@withContext results
+        } catch (_: Exception) {}
+
         val now = System.currentTimeMillis()
         if (!forceRefresh && cachedBanners != null && (now - cachedBanners!!.first) < CACHE_EXPIRY_MS) {
             return@withContext cachedBanners!!.second
@@ -137,6 +152,11 @@ object DonghuaParser {
     }
 
     suspend fun getWeeklySchedule(forceRefresh: Boolean = false): List<WeekdaySchedule> = withContext(Dispatchers.IO) {
+        try {
+            val results = Lk21Parser.getWeeklySchedule(forceRefresh)
+            if (results.isNotEmpty()) return@withContext results
+        } catch (_: Exception) {}
+
         val now = System.currentTimeMillis()
         if (!forceRefresh && cachedSchedule != null && (now - cachedSchedule!!.first) < CACHE_EXPIRY_MS) {
             return@withContext cachedSchedule!!.second
@@ -167,6 +187,11 @@ object DonghuaParser {
     }
 
     suspend fun getRankings(forceRefresh: Boolean = false): List<AnimeItem> = withContext(Dispatchers.IO) {
+        try {
+            val results = Lk21Parser.getRankings(forceRefresh)
+            if (results.isNotEmpty()) return@withContext results
+        } catch (_: Exception) {}
+
         val now = System.currentTimeMillis()
         if (!forceRefresh && cachedRankings != null && (now - cachedRankings!!.first) < CACHE_EXPIRY_MS) {
             return@withContext cachedRankings!!.second
@@ -189,6 +214,10 @@ object DonghuaParser {
     }
 
     suspend fun getDetails(animeId: Int, forceRefresh: Boolean = false): AnimeDetail = withContext(Dispatchers.IO) {
+        try {
+            return@withContext Lk21Parser.getDetails(animeId, forceRefresh)
+        } catch (_: Exception) {}
+
         if (!forceRefresh) {
             val cached = detailCache.get(animeId)
             if (cached != null) return@withContext cached
