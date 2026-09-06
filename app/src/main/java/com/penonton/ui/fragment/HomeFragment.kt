@@ -62,10 +62,7 @@ class HomeFragment : Fragment() {
             onAnimeClick = { openDetail(it) },
             onBannerClick = { openDetail(it) },
             onBannerSelected = { (activity as? com.penonton.ui.activity.MainActivity)?.updateAmbientBackdrop(it) },
-            onSearchSubmit = { search(it) },
-            onSearchClear = { clearSearch() },
-            defaultHeaderTitle = "Film & Movie Terbaru",
-            searchHint = "Cari film LK21..."
+            defaultHeaderTitle = "Film & Movie Terbaru"
         )
 
         val glm = GridLayoutManager(requireContext(), 3)
@@ -73,7 +70,6 @@ class HomeFragment : Fragment() {
             override fun getSpanSize(position: Int): Int {
                 return when (homeAdapter.getItemViewType(position)) {
                     HomeAdapter.TYPE_BANNER,
-                    HomeAdapter.TYPE_SEARCH,
                     HomeAdapter.TYPE_HISTORY_HEADER,
                     HomeAdapter.TYPE_CONTINUE,
                     HomeAdapter.TYPE_HEADER,

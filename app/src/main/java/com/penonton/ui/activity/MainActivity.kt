@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
         setupFragments()
         setupBottomNav()
         setupLogoStyle()
+        setupHeaderSearch()
     }
 
     private fun setupAmbientBackdrop() {
@@ -241,5 +242,109 @@ class MainActivity : AppCompatActivity() {
         }
         tx.commit()
         activeFragment = target
+    }
+
+    private fun setupHeaderSearch() {
+        // Floating search button on right of header
+        binding.btnHeaderSearch.setOnClickListener {
+            openHeaderSearch()
+        }
+
+        // Close / Auto-hide search button
+        binding.btnCloseHeaderSearch.setOnClickListener {
+            closeHeaderSearch()
+        }
+
+        // Clear search text button
+        binding.btnClearHeaderSearch.setOnClickListener {
+            binding.etHeaderSearch.setText("")
+            dispatchSearchToActiveFragment("")
+        }
+
+        // Real-time typing & dispatching
+        binding.etHeaderSearch.addTextChangedListener { text ->
+            val query = text?.toString()?.trim() ?: ""
+            binding.btnClearHeaderSearch.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
+            dispatchSearchToActiveFragment(query)
+        }
+
+        // Keyboard search action (IME)
+        binding.etHeaderSearch.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                val query = binding.etHeaderSearch.text?.toString()?.trim() ?: ""
+                dispatchSearchToActiveFragment(query)
+                hideKeyboard(binding.etHeaderSearch)
+                true
+            } else false
+        }
+
+        // Back press handling: auto-hide search if open
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.layoutHeaderSearchBar.visibility == View.VISIBLE) {
+                    closeHeaderSearch()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        })
+    }
+
+    private fun openHeaderSearch() {
+        binding.layoutBrandHeader.visibility = View.GONE
+        binding.layoutHeaderSearchBar.visibility = View.VISIBLE
+        binding.layoutHeaderSearchBar.alpha = 0f
+        binding.layoutHeaderSearchBar.animate().alpha(1f).setDuration(200).start()
+        binding.etHeaderSearch.requestFocus()
+        showKeyboard(binding.etHeaderSearch)
+    }
+
+    private fun closeHeaderSearch() {
+        hideKeyboard(binding.etHeaderSearch)
+        binding.etHeaderSearch.setText("")
+        binding.layoutHeaderSearchBar.visibility = View.GONE
+        binding.layoutBrandHeader.visibility = View.VISIBLE
+        binding.layoutBrandHeader.alpha = 0f
+        binding.layoutBrandHeader.animate().alpha(1f).setDuration(200).start()
+        dispatchClearSearchToFragments()
+    }
+
+    private fun dispatchSearchToActiveFragment(query: String) {
+        if (query.isEmpty()) {
+            dispatchClearSearchToFragments()
+            return
+        }
+
+        // If currently on Ranking or Library tab, auto switch to Series / Movies tab
+        if (activeFragment == rankingFragment || activeFragment == libraryFragment) {
+            binding.bottomNav.selectedItemId = R.id.nav_series
+        }
+
+        when (activeFragment) {
+            seriesFragment -> seriesFragment.search(query)
+            moviesFragment -> moviesFragment.search(query)
+            else -> {
+                seriesFragment.search(query)
+            }
+        }
+    }
+
+    private fun dispatchClearSearchToFragments() {
+        seriesFragment.clearSearch()
+        moviesFragment.clearSearch()
+    }
+
+    private fun showKeyboard(view: View) {
+        view.postDelayed({
+            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            imm?.showSoftInput(view, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        }, 100)
+    }
+
+    private fun hideKeyboard(view: View) {
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+        imm?.hideSoftInputFromWindow(view.windowToken, 0)
     }
 }

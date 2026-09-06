@@ -6,8 +6,6 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
-import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.penonton.data.model.MovieItem
@@ -17,7 +15,6 @@ import com.penonton.databinding.ItemContinueWatchingBinding
 import com.penonton.databinding.ItemHomeBannerContainerBinding
 import com.penonton.databinding.ItemHomeContinueWatchingBinding
 import com.penonton.databinding.ItemHomeHeaderBinding
-import com.penonton.databinding.ItemHomeSearchBinding
 import com.penonton.databinding.ItemLoadingFooterBinding
 import com.penonton.ui.activity.PlayerActivity
 import com.penonton.util.CountryUtils
@@ -28,27 +25,22 @@ class HomeAdapter(
     private val onAnimeClick: (MovieItem) -> Unit,
     private val onBannerClick: (MovieItem) -> Unit,
     private val onBannerSelected: (String) -> Unit = {},
-    private val onSearchSubmit: (String) -> Unit,
-    private val onSearchClear: () -> Unit,
-    private val defaultHeaderTitle: String = "Rilis Terbaru",
-    private val searchHint: String = "Cari film atau serial drama..."
+    private val defaultHeaderTitle: String = "Rilis Terbaru"
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
         const val TYPE_BANNER = 0
-        const val TYPE_SEARCH = 1
-        const val TYPE_HISTORY_HEADER = 2
-        const val TYPE_CONTINUE = 3
-        const val TYPE_HEADER = 4
-        const val TYPE_ANIME = 5
-        const val TYPE_LOADING = 6
+        const val TYPE_HISTORY_HEADER = 1
+        const val TYPE_CONTINUE = 2
+        const val TYPE_HEADER = 3
+        const val TYPE_ANIME = 4
+        const val TYPE_LOADING = 5
     }
 
     private val banners = mutableListOf<MovieItem>()
     private val movieList = mutableListOf<MovieItem>()
     private val continueWatching = mutableListOf<WatchHistoryItem>()
     private var headerTitle: String = defaultHeaderTitle
-    private var currentSearchQuery: String = ""
     private var isSearching = false
     private var isLoadingMore = false
 
@@ -61,7 +53,6 @@ class HomeAdapter(
         customTitle: String? = null
     ) {
         isSearching = false
-        currentSearchQuery = ""
         headerTitle = customTitle ?: defaultHeaderTitle
         banners.clear(); banners.addAll(newBanners)
         movieList.clear(); movieList.addAll(newAnime)
@@ -86,7 +77,6 @@ class HomeAdapter(
 
     fun setSearchResult(query: String, results: List<MovieItem>) {
         isSearching = true
-        currentSearchQuery = query
         headerTitle = "Hasil Pencarian: $query"
         banners.clear()
         continueWatching.clear()
@@ -106,21 +96,25 @@ class HomeAdapter(
     private fun hasContinue() = !isSearching && continueWatching.isNotEmpty()
     private fun hasBanner() = !isSearching && banners.isNotEmpty()
 
-    private fun searchPos() = if (hasBanner()) 1 else 0
-    private fun histHeaderPos() = if (hasContinue()) searchPos() + 1 else -1
+    private fun bannerPos() = if (hasBanner()) 0 else -1
+    private fun histHeaderPos() = if (hasContinue()) (if (hasBanner()) 1 else 0) else -1
     private fun continuePos() = if (hasContinue()) histHeaderPos() + 1 else -1
-    private fun animeHeaderPos() = if (hasContinue()) continuePos() + 1 else searchPos() + 1
+    private fun animeHeaderPos(): Int {
+        var pos = 0
+        if (hasBanner()) pos++
+        if (hasContinue()) pos += 2
+        return pos
+    }
     private fun animeStartPos() = animeHeaderPos() + 1
 
     override fun getItemViewType(position: Int): Int {
         // Loading footer at very end
         if (isLoadingMore && position == itemCount - 1) return TYPE_LOADING
-        return when {
-            hasBanner() && position == 0 -> TYPE_BANNER
-            position == searchPos() -> TYPE_SEARCH
-            position == histHeaderPos() -> TYPE_HISTORY_HEADER
-            position == continuePos() -> TYPE_CONTINUE
-            position == animeHeaderPos() -> TYPE_HEADER
+        return when (position) {
+            bannerPos() -> TYPE_BANNER
+            histHeaderPos() -> TYPE_HISTORY_HEADER
+            continuePos() -> TYPE_CONTINUE
+            animeHeaderPos() -> TYPE_HEADER
             else -> TYPE_ANIME
         }
     }
@@ -128,7 +122,6 @@ class HomeAdapter(
     override fun getItemCount(): Int {
         var count = 0
         if (hasBanner()) count++ // banner
-        count++ // search
         if (hasContinue()) count += 2 // history header + continue
         count++ // anime header
         count += movieList.size
@@ -140,7 +133,6 @@ class HomeAdapter(
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
             TYPE_BANNER   -> BannerViewHolder(ItemHomeBannerContainerBinding.inflate(inflater, parent, false))
-            TYPE_SEARCH   -> SearchViewHolder(ItemHomeSearchBinding.inflate(inflater, parent, false))
             TYPE_HISTORY_HEADER -> HistoryHeaderViewHolder(ItemHomeHeaderBinding.inflate(inflater, parent, false))
             TYPE_CONTINUE -> ContinueWatchingViewHolder(ItemHomeContinueWatchingBinding.inflate(inflater, parent, false))
             TYPE_HEADER   -> HeaderViewHolder(ItemHomeHeaderBinding.inflate(inflater, parent, false))
@@ -152,7 +144,6 @@ class HomeAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is BannerViewHolder        -> holder.bind(banners)
-            is SearchViewHolder        -> holder.bind(currentSearchQuery)
             is HistoryHeaderViewHolder -> holder.bind("▶ Lanjutkan Menonton")
             is ContinueWatchingViewHolder -> holder.bind(continueWatching)
             is HeaderViewHolder        -> holder.bind(headerTitle)
@@ -210,42 +201,6 @@ class HomeAdapter(
         }
         private fun startAutoSlide() { handler.removeCallbacks(runnable); handler.postDelayed(runnable, 3500) }
         fun stopAutoSlide() { handler.removeCallbacks(runnable) }
-    }
-
-    inner class SearchViewHolder(private val binding: ItemHomeSearchBinding) :
-        RecyclerView.ViewHolder(binding.root) {
-        init {
-            binding.etSearch.hint = searchHint
-            binding.etSearch.setOnEditorActionListener { _, actionId, _ ->
-                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                    val query = binding.etSearch.text?.toString()?.trim() ?: ""
-                    if (query.isNotEmpty()) {
-                        onSearchSubmit(query)
-                    }
-                    true
-                } else false
-            }
-
-            binding.etSearch.addTextChangedListener { text ->
-                val query = text?.toString()?.trim() ?: ""
-                binding.btnClearSearch.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
-                if (query.isEmpty() && isSearching) {
-                    onSearchClear()
-                }
-            }
-
-            binding.btnClearSearch.setOnClickListener {
-                binding.etSearch.setText("")
-                onSearchClear()
-            }
-        }
-
-        fun bind(query: String) {
-            if (binding.etSearch.text.toString() != query) {
-                binding.etSearch.setText(query)
-            }
-            binding.btnClearSearch.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
-        }
     }
 
     inner class HistoryHeaderViewHolder(private val binding: ItemHomeHeaderBinding) :

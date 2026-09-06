@@ -63,10 +63,7 @@ class ScheduleFragment : Fragment() {
             onAnimeClick = { openDetail(it) },
             onBannerClick = { openDetail(it) },
             onBannerSelected = { (activity as? MainActivity)?.updateAmbientBackdrop(it) },
-            onSearchSubmit = { search(it) },
-            onSearchClear = { clearSearch() },
-            defaultHeaderTitle = "Series & Drama Terbaru",
-            searchHint = "Cari serial drama, drakor, series..."
+            defaultHeaderTitle = "Series & Drama Terbaru"
         )
 
         val glm = GridLayoutManager(requireContext(), 3)
@@ -74,7 +71,6 @@ class ScheduleFragment : Fragment() {
             override fun getSpanSize(position: Int): Int {
                 return when (seriesAdapter.getItemViewType(position)) {
                     HomeAdapter.TYPE_BANNER,
-                    HomeAdapter.TYPE_SEARCH,
                     HomeAdapter.TYPE_HISTORY_HEADER,
                     HomeAdapter.TYPE_CONTINUE,
                     HomeAdapter.TYPE_HEADER,
