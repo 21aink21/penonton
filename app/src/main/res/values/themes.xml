@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.Lk21" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.Penonton" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_variant</item>
         <item name="colorSecondary">@color/secondary</item>
@@ -8,7 +8,7 @@
         <item name="android:windowBackground">@color/background</item>
     </style>
 
-    <style name="Theme.Lk21.Fullscreen" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.Penonton.Fullscreen" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:statusBarColor">@android:color/transparent</item>

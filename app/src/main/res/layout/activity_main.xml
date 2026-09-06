@@ -7,7 +7,7 @@
     android:background="@android:color/transparent">
 
     <!-- Top-to-Search Dynamic Ambient Backdrop (Duplicate Layer with 30% Blur & 70% Opacity fading to Search Box) -->
-    <com.lk21official.ui.widget.FadingImageView
+    <com.penonton.ui.widget.FadingImageView
         android:id="@+id/ivDynamicHomeBackdrop"
         android:layout_width="match_parent"
         android:layout_height="440dp"
@@ -52,7 +52,7 @@
             android:shadowDx="0"
             android:shadowDy="3"
             android:shadowRadius="8"
-            android:text="LK21 &amp; DRAMA"
+            android:text="PENONTON"
             android:textColor="#FC6F01"
             android:textSize="36sp"
             android:textStyle="bold" />
@@ -103,7 +103,7 @@
                 android:shadowDx="0"
                 android:shadowDy="2"
                 android:shadowRadius="4"
-                android:text="LK21 &amp; DRAMA"
+                android:text="PENONTON"
                 android:textColor="#FC6F01"
                 android:textSize="23sp"
                 android:textStyle="bold" />

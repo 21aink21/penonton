@@ -1,6 +1,6 @@
 <!-- res/values/strings.xml -->
 <resources>
-    <string name="app_name">LK21 &amp; NontonDrama</string>
+    <string name="app_name">Penonton</string>
     <string name="search_hint">Cari film atau serial drama...</string>
     <string name="latest_updates">Film &amp; Series Terbaru</string>
     <string name="search_results">Hasil Pencarian</string>

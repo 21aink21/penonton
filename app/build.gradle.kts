@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.lk21official"
+    namespace = "com.penonton"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.lk21official"
+        applicationId = "com.penonton"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
