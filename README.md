@@ -15,6 +15,12 @@
 
 ---
 
+## 📥 Download APK Terbaru
+
+👉 **[Download LK21 v1.0 APK](https://github.com/21aink21/LK21/releases/download/v1.0/LK21-v1.0.apk)** *(Ukuran: ~13 MB)*
+
+---
+
 ## ✨ Fitur Unggulan
 
 - 🚀 **PlayCDN & Videonode HLS Engine**:
