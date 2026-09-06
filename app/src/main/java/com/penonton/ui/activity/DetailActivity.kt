@@ -78,10 +78,12 @@ class DetailActivity : AppCompatActivity() {
                 val shader = android.graphics.LinearGradient(
                     0f, 0f, textWidth, 0f,
                     intArrayOf(
-                        0xFF0055FF.toInt(), // Electric Blue (Icon Dominant)
-                        0xFFFC6F01.toInt()  // Flame Orange (Icon Accent)
+                        0xFFFB9E0C.toInt(), // Amber Gold / Orange (Icon Left)
+                        0xFFF34390.toInt(), // Vibrant Rose Pink (Icon Center)
+                        0xFF9425EE.toInt(), // Royal Violet / Purple (Icon Right)
+                        0xFF049CFC.toInt()  // Electric Cyan Blue (Icon Accent)
                     ),
-                    floatArrayOf(0f, 1f),
+                    floatArrayOf(0.0f, 0.35f, 0.70f, 1.0f),
                     android.graphics.Shader.TileMode.CLAMP
                 )
                 binding.tvWatermarkText.paint.shader = shader

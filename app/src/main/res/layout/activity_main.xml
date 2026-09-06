@@ -53,7 +53,7 @@
             android:shadowDy="3"
             android:shadowRadius="8"
             android:text="PENONTON"
-            android:textColor="#FC6F01"
+            android:textColor="#FB9E0C"
             android:textSize="36sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -97,7 +97,7 @@
                 android:shadowDy="2"
                 android:shadowRadius="4"
                 android:text="PENONTON"
-                android:textColor="#FC6F01"
+                android:textColor="#FB9E0C"
                 android:textSize="23sp"
                 android:textStyle="bold" />
 
