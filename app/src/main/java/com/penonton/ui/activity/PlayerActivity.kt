@@ -83,6 +83,8 @@ class PlayerActivity : AppCompatActivity() {
 
     private var isEmbedPlaying = false
     private var embedStartTimeMs = 0L
+    private var currentRawEmbedUrl: String? = null
+    private var hasInterceptedM3u8 = false
 
     private var initialResumePositionMs = 0L
     private var hasAppliedResumePosition = false
@@ -446,12 +448,14 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun loadStream() {
         binding.playerProgressBar.visibility = View.VISIBLE
+        hasInterceptedM3u8 = false
         val playUrl = intent.getStringExtra("PLAY_URL") ?: intent.getStringExtra("MEDIA_URL")
 
         lifecycleScope.launch {
             try {
                 val stream = com.penonton.data.parser.Lk21Parser.getStream(movieId, currentSid, currentNid, playUrl)
                 binding.playerProgressBar.visibility = View.GONE
+                currentRawEmbedUrl = stream.embedUrl
 
                 if (!stream.m3u8Url.isNullOrEmpty()) {
                     playHlsStream(stream.m3u8Url)
@@ -479,7 +483,7 @@ class PlayerActivity : AppCompatActivity() {
             m3u8Url.contains("rumble.com") -> "https://rumble.com/"
             m3u8Url.contains("cdn.rumble.cloud") -> "https://rumble.com/"
             m3u8Url.contains("doubanio.com") -> "https://movie.douban.com/"
-                        else -> "https://playcdn.de/"
+            else -> "https://playcdn.de/"
         }
 
         val dataSourceFactory = DefaultHttpDataSource.Factory()
@@ -543,7 +547,10 @@ class PlayerActivity : AppCompatActivity() {
 
                 override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                     binding.playerProgressBar.visibility = View.GONE
-                    playEmbedStream(m3u8Url)
+                    val fallback = currentRawEmbedUrl ?: m3u8Url
+                    if (fallback.isNotEmpty()) {
+                        playEmbedStream(fallback)
+                    }
                 }
             })
         }
@@ -562,9 +569,15 @@ class PlayerActivity : AppCompatActivity() {
         val targetPos = initialResumePositionMs
         val startSec = if (targetPos > 1000L) targetPos / 1000.0 else 0.0
 
+        android.webkit.CookieManager.getInstance().apply {
+            setAcceptCookie(true)
+            setAcceptThirdPartyCookies(binding.webViewPlayer, true)
+        }
+
         binding.webViewPlayer.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
+            databaseEnabled = true
             allowFileAccess = true
             allowContentAccess = true
             mediaPlaybackRequiresUserGesture = false
@@ -614,6 +627,25 @@ class PlayerActivity : AppCompatActivity() {
                 return false
             }
 
+            override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): android.webkit.WebResourceResponse? {
+                val uri = request?.url ?: return null
+                val url = uri.toString()
+
+                if ((url.contains(".m3u8") || url.contains("master.txt")) && !hasInterceptedM3u8) {
+                    hasInterceptedM3u8 = true
+                    runOnUiThread {
+                        if (!isFinishing && !isDestroyed) {
+                            try {
+                                binding.webViewPlayer.stopLoading()
+                                binding.webViewPlayer.loadUrl("about:blank")
+                            } catch (_: Exception) {}
+                            playHlsStream(url)
+                        }
+                    }
+                }
+                return null
+            }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 binding.playerProgressBar.visibility = View.GONE
 
@@ -640,6 +672,13 @@ class PlayerActivity : AppCompatActivity() {
         val hlsJs = try {
             assets.open("hls.min.js").bufferedReader().use { it.readText() }
         } catch (_: Exception) { "" }
+
+        val playUrl = intent.getStringExtra("PLAY_URL") ?: intent.getStringExtra("MEDIA_URL") ?: ""
+        val baseUrl = if (playUrl.contains("nontondrama") || embedUrl.contains("nontondrama")) {
+            "https://tv9.nontondrama.my/"
+        } else {
+            "https://tv12.lk21official.cc/"
+        }
 
         val htmlContent = if (embedUrl.contains(".m3u8")) {
             """
@@ -715,7 +754,7 @@ class PlayerActivity : AppCompatActivity() {
             """.trimIndent()
         }
 
-        binding.webViewPlayer.loadDataWithBaseURL("https://tv12.lk21official.cc", htmlContent, "text/html", "UTF-8", null)
+        binding.webViewPlayer.loadDataWithBaseURL(baseUrl, htmlContent, "text/html", "UTF-8", null)
     }
 
     private fun startProgressSaver() {

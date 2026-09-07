@@ -564,79 +564,96 @@ object Lk21Parser {
             throw Exception("Iframe player video tidak ditemukan pada halaman ini")
         }
 
-        if (vnodeIframe.startsWith("/")) {
+        if (vnodeIframe.startsWith("//")) {
+            vnodeIframe = "https:$vnodeIframe"
+        } else if (vnodeIframe.startsWith("/")) {
             vnodeIframe = "https://videonode.de$vnodeIframe"
         }
 
-        // 1. Fetch videonode iframe
-        val vnodeHtml = fetchHtml(vnodeIframe, referer = playUrl)
-        val vnodeDoc = Jsoup.parse(vnodeHtml)
-        var playcdnIframe = vnodeDoc.selectFirst("iframe")?.attr("src")?.replace("&amp;", "&")
+        // Try direct HLS extraction if possible (videonode -> playcdn -> direct m3u8)
+        try {
+            val vnodeHtml = fetchHtml(vnodeIframe, referer = playUrl)
+            val vnodeDoc = Jsoup.parse(vnodeHtml)
+            var playcdnIframe = vnodeDoc.selectFirst("iframe")?.attr("src")?.replace("&amp;", "&")
 
-        if (playcdnIframe.isNullOrEmpty()) {
-            val playM = Pattern.compile("<iframe[^>]+src=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE).matcher(vnodeHtml)
-            if (playM.find()) {
-                playcdnIframe = playM.group(1)?.replace("&amp;", "&")
+            if (playcdnIframe.isNullOrEmpty()) {
+                val playM = Pattern.compile("<iframe[^>]+src=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE).matcher(vnodeHtml)
+                if (playM.find()) {
+                    playcdnIframe = playM.group(1)?.replace("&amp;", "&")
+                }
             }
-        }
 
-        if (playcdnIframe.isNullOrEmpty()) {
-            throw Exception("Iframe PlayCDN tidak ditemukan")
-        }
+            if (!playcdnIframe.isNullOrEmpty()) {
+                if (playcdnIframe.startsWith("//")) {
+                    playcdnIframe = "https:$playcdnIframe"
+                } else if (playcdnIframe.startsWith("/")) {
+                    playcdnIframe = "https://playcdn.de$playcdnIframe"
+                }
 
-        if (playcdnIframe.startsWith("/")) {
-            playcdnIframe = "https://playcdn.de$playcdnIframe"
-        }
+                // 2. Fetch playcdn video.php to get token
+                val playcdnHtml = fetchHtml(playcdnIframe, referer = vnodeIframe)
+                val pattern = Pattern.compile("var\\s+data\\s*=\\s*(\\{.+?\\});")
+                val matcher = pattern.matcher(playcdnHtml)
+                if (matcher.find()) {
+                    val dataJson = gson.fromJson(matcher.group(1), JsonObject::class.java)
+                    val token = dataJson.get("token")?.asString
+                    if (!token.isNullOrEmpty()) {
+                        // 3. POST token to verify.php
+                        val verifyUrl = "https://playcdn.de/verify.php"
+                        val payload = JsonObject().apply {
+                            addProperty("token", token)
+                            addProperty("is_ios", false)
+                        }.toString()
 
-        // 2. Fetch playcdn video.php to get token
-        val playcdnHtml = fetchHtml(playcdnIframe, referer = vnodeIframe)
-        val pattern = Pattern.compile("var\\s+data\\s*=\\s*(\\{.+?\\});")
-        val matcher = pattern.matcher(playcdnHtml)
-        if (!matcher.find()) {
-            throw Exception("Token streaming playcdn tidak ditemukan")
-        }
+                        val postReq = Request.Builder()
+                            .url(verifyUrl)
+                            .header("User-Agent", USER_AGENT)
+                            .header("Content-Type", "application/json")
+                            .header("Referer", playcdnIframe)
+                            .header("Origin", "https://playcdn.de")
+                            .post(payload.toRequestBody("application/json".toMediaType()))
+                            .build()
 
-        val dataJson = gson.fromJson(matcher.group(1), JsonObject::class.java)
-        val token = dataJson.get("token")?.asString ?: throw Exception("Token video kosong")
+                        var directM3u8: String? = null
+                        client.newCall(postReq).execute().use { res ->
+                            val resBody = res.body?.string() ?: ""
+                            val resObj = gson.fromJson(resBody, JsonObject::class.java)
+                            if (resObj.get("status")?.asString == "success") {
+                                directM3u8 = resObj.get("fileUrl")?.asString
+                            }
+                        }
 
-        // 3. POST token to verify.php
-        val verifyUrl = "https://playcdn.de/verify.php"
-        val payload = JsonObject().apply {
-            addProperty("token", token)
-            addProperty("is_ios", false)
-        }.toString()
-
-        val postReq = Request.Builder()
-            .url(verifyUrl)
-            .header("User-Agent", USER_AGENT)
-            .header("Content-Type", "application/json")
-            .header("Referer", playcdnIframe)
-            .header("Origin", "https://playcdn.de")
-            .post(payload.toRequestBody("application/json".toMediaType()))
-            .build()
-
-        var directM3u8: String? = null
-        client.newCall(postReq).execute().use { res ->
-            val resBody = res.body?.string() ?: ""
-            val resObj = gson.fromJson(resBody, JsonObject::class.java)
-            if (resObj.get("status")?.asString == "success") {
-                directM3u8 = resObj.get("fileUrl")?.asString
+                        if (!directM3u8.isNullOrEmpty()) {
+                            return@withContext StreamResult(
+                                id = movieId,
+                                sid = sid,
+                                nid = nid,
+                                provider = "playcdn",
+                                rawUrl = directM3u8!!,
+                                m3u8Url = directM3u8,
+                                embedUrl = null,
+                                qualities = mapOf("Auto" to directM3u8!!),
+                                linkNext = null,
+                                linkPre = null
+                            )
+                        }
+                    }
+                }
             }
+        } catch (_: Exception) {
+            // Videonode/PlayCDN is protected or direct HTTP fetch returned 403; fallback to embedUrl for WebView player
         }
 
-        if (directM3u8.isNullOrEmpty()) {
-            throw Exception("Gagal memuat URL HLS PlayCDN")
-        }
-
+        // Graceful Fallback: return embed URL so WebView player handles playback seamlessly
         StreamResult(
             id = movieId,
             sid = sid,
             nid = nid,
-            provider = "playcdn",
-            rawUrl = directM3u8!!,
-            m3u8Url = directM3u8,
-            embedUrl = null,
-            qualities = mapOf("Auto" to directM3u8!!),
+            provider = "embed",
+            rawUrl = vnodeIframe,
+            m3u8Url = null,
+            embedUrl = vnodeIframe,
+            qualities = emptyMap(),
             linkNext = null,
             linkPre = null
         )
