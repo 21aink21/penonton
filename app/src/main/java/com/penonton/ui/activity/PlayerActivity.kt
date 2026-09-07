@@ -48,6 +48,8 @@ class PlayerActivity : AppCompatActivity() {
     private var animePoster: String = ""
     private var currentSid: Int = 1
     private var currentNid: Int = 1
+    private var currentPlayUrl: String = ""
+    private var currentMovieUrl: String = ""
 
     private var isScreenLocked = false
     private var isControlsVisible = true
@@ -117,6 +119,8 @@ class PlayerActivity : AppCompatActivity() {
         animePoster = intent.getStringExtra("MEDIA_POSTER") ?: ""
         currentSid = intent.getIntExtra("SID", 1)
         currentNid = intent.getIntExtra("NID", 1)
+        currentPlayUrl = intent.getStringExtra("PLAY_URL") ?: intent.getStringExtra("MEDIA_URL") ?: ""
+        currentMovieUrl = intent.getStringExtra("MOVIE_URL") ?: intent.getStringExtra("PAGE_URL") ?: ""
 
         val intentPos = intent.getLongExtra("START_POSITION", -1L)
         initialResumePositionMs = if (intentPos > 0L) {
@@ -449,13 +453,25 @@ class PlayerActivity : AppCompatActivity() {
     private fun loadStream() {
         binding.playerProgressBar.visibility = View.VISIBLE
         hasInterceptedM3u8 = false
-        val playUrl = intent.getStringExtra("PLAY_URL") ?: intent.getStringExtra("MEDIA_URL")
+        val playUrl = intent.getStringExtra("PLAY_URL")
+            ?: intent.getStringExtra("MEDIA_URL")
+            ?: currentPlayUrl.takeIf { it.isNotEmpty() }
+            ?: currentMovieUrl.takeIf { it.isNotEmpty() }
 
         lifecycleScope.launch {
             try {
-                val stream = com.penonton.data.parser.Lk21Parser.getStream(movieId, currentSid, currentNid, playUrl)
+                val stream = com.penonton.data.parser.Lk21Parser.getStream(
+                    movieId = movieId,
+                    sid = currentSid,
+                    nid = currentNid,
+                    fallbackUrl = playUrl,
+                    title = animeTitle
+                )
                 binding.playerProgressBar.visibility = View.GONE
                 currentRawEmbedUrl = stream.embedUrl
+                if (currentPlayUrl.isEmpty() && stream.rawUrl.isNotEmpty()) {
+                    currentPlayUrl = stream.rawUrl
+                }
 
                 if (!stream.m3u8Url.isNullOrEmpty()) {
                     playHlsStream(stream.m3u8Url)
@@ -601,7 +617,9 @@ class PlayerActivity : AppCompatActivity() {
                         sid = currentSid,
                         nid = currentNid,
                         positionMs = posMs,
-                        durationMs = durMs
+                        durationMs = durMs,
+                        playUrl = currentPlayUrl,
+                        movieUrl = currentMovieUrl
                     )
                 }
             }
@@ -780,7 +798,9 @@ class PlayerActivity : AppCompatActivity() {
                     sid = currentSid,
                     nid = currentNid,
                     positionMs = pos,
-                    durationMs = dur
+                    durationMs = dur,
+                    playUrl = currentPlayUrl,
+                    movieUrl = currentMovieUrl
                 )
             }
         }

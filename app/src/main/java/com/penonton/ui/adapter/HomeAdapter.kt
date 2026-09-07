@@ -310,6 +310,9 @@ class HomeAdapter(
                         putExtra("EPISODE_NAME", item.episodeName)
                         putExtra("SID", item.sid)
                         putExtra("NID", item.nid)
+                        putExtra("PLAY_URL", item.playUrl)
+                        putExtra("MEDIA_URL", item.playUrl)
+                        putExtra("MOVIE_URL", item.movieUrl)
                         putExtra("START_POSITION", item.positionMs)
                     })
                 }

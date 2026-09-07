@@ -60,7 +60,9 @@ data class WatchHistoryItem(
     val nid: Int,
     val positionMs: Long,
     val durationMs: Long,
-    val timestamp: Long
+    val timestamp: Long,
+    val playUrl: String = "",
+    val movieUrl: String = ""
 ) : Serializable
 
 data class WeekdaySchedule(

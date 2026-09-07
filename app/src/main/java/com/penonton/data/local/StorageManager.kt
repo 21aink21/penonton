@@ -24,7 +24,9 @@ class StorageManager(context: Context) {
         sid: Int,
         nid: Int,
         positionMs: Long,
-        durationMs: Long
+        durationMs: Long,
+        playUrl: String = "",
+        movieUrl: String = ""
     ) {
         val list = getHistory().toMutableList()
         val oldItem = list.firstOrNull { it.movieId == movieId }
@@ -38,16 +40,21 @@ class StorageManager(context: Context) {
                 ?: 0L
         }
 
+        val finalPlayUrl = if (playUrl.isNotEmpty()) playUrl else (oldItem?.playUrl ?: "")
+        val finalMovieUrl = if (movieUrl.isNotEmpty()) movieUrl else (oldItem?.movieUrl ?: "")
+
         val item = WatchHistoryItem(
-            movieId,
-            title,
-            poster,
-            episodeName,
-            sid,
-            nid,
-            positionMs,
-            finalDuration,
-            System.currentTimeMillis()
+            movieId = movieId,
+            title = title,
+            poster = poster,
+            episodeName = episodeName,
+            sid = sid,
+            nid = nid,
+            positionMs = positionMs,
+            durationMs = finalDuration,
+            timestamp = System.currentTimeMillis(),
+            playUrl = finalPlayUrl,
+            movieUrl = finalMovieUrl
         )
         list.add(0, item) // Add to top
         if (list.size > 50) list.removeAt(list.size - 1) // Keep latest 50

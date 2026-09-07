@@ -526,7 +526,13 @@ object Lk21Parser {
     // =========================================================================
     // 7. STREAM EXTRACTION (VIDEONODE -> PLAYCDN -> DIRECT HLS)
     // =========================================================================
-    suspend fun getStream(movieId: Int, sid: Int = 1, nid: Int = 1, fallbackUrl: String? = null): StreamResult = withContext(Dispatchers.IO) {
+    suspend fun getStream(
+        movieId: Int,
+        sid: Int = 1,
+        nid: Int = 1,
+        fallbackUrl: String? = null,
+        title: String? = null
+    ): StreamResult = withContext(Dispatchers.IO) {
         var playUrl = fallbackUrl?.takeIf { it.isNotEmpty() } ?: idToUrlMap[movieId] ?: ""
         if (playUrl.isEmpty()) {
             val cachedDetail = detailCache.get(movieId)
@@ -538,6 +544,33 @@ object Lk21Parser {
                 }
             }
         }
+
+        // Automatic Recovery: if playUrl is still empty (e.g. from history click after app restart)
+        if (playUrl.isEmpty() && !title.isNullOrEmpty()) {
+            try {
+                val cleanTitle = title.replace(Regex("(?i)Season\\s*\\d+|Episode\\s*\\d+|Eps\\s*\\d+"), "").trim()
+                val searchResults = search(cleanTitle.ifEmpty { title })
+                val match = searchResults.firstOrNull { it.id == movieId }
+                    ?: searchResults.firstOrNull { it.title.equals(cleanTitle, ignoreCase = true) }
+                    ?: searchResults.firstOrNull { it.title.contains(cleanTitle, ignoreCase = true) || cleanTitle.contains(it.title, ignoreCase = true) }
+                    ?: searchResults.firstOrNull()
+
+                if (match != null && match.url.isNotEmpty()) {
+                    val detail = getDetails(match.id, match.url)
+                    val ep = detail.servers.flatMap { it.episodes }.firstOrNull { it.nid == nid && it.sid == sid }
+                        ?: detail.servers.firstOrNull()?.episodes?.firstOrNull()
+                    if (ep != null && ep.playUrl.isNotEmpty()) {
+                        playUrl = ep.playUrl
+                        idToUrlMap[movieId] = playUrl
+                    } else if (match.url.isNotEmpty()) {
+                        playUrl = match.url
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         if (playUrl.isEmpty()) {
             throw Exception("URL video tidak ditemukan")
         }

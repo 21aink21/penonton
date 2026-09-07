@@ -244,8 +244,10 @@ class DetailActivity : AppCompatActivity() {
         } else {
             storage.getEpisodePosition(movieId, episode.nid)
         }
+        val moviePageUrl = intent.getStringExtra("MEDIA_URL") ?: currentDetail?.servers?.firstOrNull()?.episodes?.firstOrNull()?.playUrl ?: ""
         val intent = Intent(this, PlayerActivity::class.java).apply {
-            putExtra("MEDIA_ID", episode.id)
+            putExtra("MEDIA_ID", movieId)
+            putExtra("EPISODE_ID", episode.id)
             putExtra("MEDIA_TITLE", currentDetail?.title ?: intent.getStringExtra("MEDIA_TITLE") ?: "")
             putExtra("MEDIA_POSTER", currentDetail?.poster ?: intent.getStringExtra("MEDIA_POSTER") ?: "")
             putExtra("EPISODE_NAME", episode.episode)
@@ -253,6 +255,7 @@ class DetailActivity : AppCompatActivity() {
             putExtra("NID", episode.nid)
             putExtra("PLAY_URL", episode.playUrl)
             putExtra("MEDIA_URL", episode.playUrl)
+            putExtra("MOVIE_URL", moviePageUrl)
             if (startPos > 1000L) {
                 putExtra("START_POSITION", startPos)
             }
