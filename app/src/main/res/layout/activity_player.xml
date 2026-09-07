@@ -15,6 +15,7 @@
         android:layout_height="match_parent"
         app:resize_mode="fit"
         app:show_buffering="when_playing"
+        app:show_timeout="7000"
         app:use_controller="true" />
 
     <!-- Fallback WebView -->

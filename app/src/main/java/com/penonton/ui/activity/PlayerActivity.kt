@@ -140,8 +140,8 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun setupPlayerControls() {
-        // Auto-hide controller & top header buttons after 3.5 seconds
-        binding.playerView.controllerShowTimeoutMs = 3500
+        // Auto-hide controller & top header buttons after 7 seconds for comfortable interaction
+        binding.playerView.controllerShowTimeoutMs = 7000
         binding.playerView.setControllerVisibilityListener(PlayerView.ControllerVisibilityListener { visibility ->
             isControlsVisible = (visibility == View.VISIBLE)
             if (isScreenLocked) return@ControllerVisibilityListener
