@@ -50,6 +50,7 @@ class PlayerActivity : AppCompatActivity() {
     private var currentNid: Int = 1
 
     private var isScreenLocked = false
+    private var isControlsVisible = true
     private var currentAspectRatioIdx = 0
     private val aspectRatios = listOf(
         AspectRatioFrameLayout.RESIZE_MODE_FIT to "Fit",
@@ -136,6 +137,7 @@ class PlayerActivity : AppCompatActivity() {
         // Auto-hide controller & top header buttons after 3.5 seconds
         binding.playerView.controllerShowTimeoutMs = 3500
         binding.playerView.setControllerVisibilityListener(PlayerView.ControllerVisibilityListener { visibility ->
+            isControlsVisible = (visibility == View.VISIBLE)
             if (isScreenLocked) return@ControllerVisibilityListener
             if (visibility == View.VISIBLE) {
                 binding.playerHeader.animate().cancel()
@@ -193,6 +195,7 @@ class PlayerActivity : AppCompatActivity() {
         // 4. Lock Screen Mode Toggle
         binding.btnLock.setOnClickListener {
             isScreenLocked = true
+            isControlsVisible = false
             binding.playerHeader.visibility = View.GONE
             binding.playerView.hideController()
             binding.playerView.useController = false
@@ -202,6 +205,7 @@ class PlayerActivity : AppCompatActivity() {
 
         binding.btnUnlock.setOnClickListener {
             isScreenLocked = false
+            isControlsVisible = true
             binding.playerView.useController = true
             binding.playerView.showController()
             binding.btnUnlock.visibility = View.GONE
@@ -236,7 +240,7 @@ class PlayerActivity : AppCompatActivity() {
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 if (isScreenLocked) return false
-                if (binding.playerView.isControllerFullyVisible) {
+                if (isControlsVisible) {
                     binding.playerView.hideController()
                 } else {
                     binding.playerView.showController()
@@ -319,6 +323,15 @@ class PlayerActivity : AppCompatActivity() {
             return true
         }
 
+        // Allow direct click interaction for top header buttons when visible
+        if (binding.playerHeader.visibility == View.VISIBLE) {
+            val headerRect = android.graphics.Rect()
+            binding.playerHeader.getGlobalVisibleRect(headerRect)
+            if (headerRect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
+                return super.dispatchTouchEvent(ev)
+            }
+        }
+
         // Multi-touch 2-Finger Pinch Zoom-in & Zoom-out
         if (ev.pointerCount >= 2) {
             isHorizontalSwipe = false
@@ -326,8 +339,6 @@ class PlayerActivity : AppCompatActivity() {
             scaleGestureDetector?.onTouchEvent(ev)
             return true
         }
-
-        val handledByDetector = gestureDetector?.onTouchEvent(ev) ?: false
 
         val screenWidth = binding.playerRoot.width.toFloat().coerceAtLeast(1f)
         val screenHeight = binding.playerRoot.height.toFloat().coerceAtLeast(1f)
@@ -350,7 +361,7 @@ class PlayerActivity : AppCompatActivity() {
                     val deltaY = ev.rawY - initialTouchY
 
                     // 1. Horizontal Seek Scrubbing Gesture
-                    if (!isVerticalSwipe && abs(deltaX) > 30 && abs(deltaX) > abs(deltaY) * 1.1f) {
+                    if (!isVerticalSwipe && abs(deltaX) > 40 && abs(deltaX) > abs(deltaY) * 1.3f) {
                         isHorizontalSwipe = true
                         val seekDeltaMs = ((deltaX / screenWidth) * 90000).toLong()
                         targetSeekPositionMs = (initialPositionMs + seekDeltaMs).coerceIn(0L, videoDurationMs)
@@ -364,7 +375,7 @@ class PlayerActivity : AppCompatActivity() {
                         return true
                     }
                     // 2. Vertical Brightness / Volume Gesture
-                    else if (!isHorizontalSwipe && abs(deltaY) > 25 && abs(deltaY) > abs(deltaX)) {
+                    else if (!isHorizontalSwipe && abs(deltaY) > 35 && abs(deltaY) > abs(deltaX) * 1.3f) {
                         isVerticalSwipe = true
                         val percentDelta = -deltaY / screenHeight
                         if (isLeftSwipe) {
@@ -411,10 +422,7 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
-        if (handledByDetector || isHorizontalSwipe || isVerticalSwipe || isScaling) {
-            return true
-        }
-
+        gestureDetector?.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
     }
 
