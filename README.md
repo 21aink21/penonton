@@ -18,11 +18,11 @@
 ## ✨ Fitur Unggulan
 
 - 🚀 **PlayCDN & Videonode HLS Engine**:
-  - Resolusi instan stream video HLS `.m3u8` dari server PlayCDN / Videonode dengan proteksi anti-hotlink bypass.
+  - Resolusi instan stream video HLS `.m3u8`.
 - 🎯 **Dukungan Movie & Series Terpadu**:
-  - Scraping katalog Film bioskop dari `penontonofficial.cc`.
-  - Scraping serial drama, drakor, anime, dan serial barat dari `penonton.my`.
-  - REST API pencarian instan terpusat via `penonton.com`.
+  - Scraping katalog Film bioskop.
+  - Scraping serial drama, drakor, anime, dan serial barat.
+  - REST API pencarian instan terpusat.
 - 🎨 **Hero Header Sinematik & Backdrop 100% Seamless**:
   - Poster rasio ~3:4 dengan transisi hardware alpha fade shader ke tema Obsidian-Crimson.
   - Skor rating emas (`★ 9.0+`), badge kualitas HD/CAM/EPS, dan baris metadata beresolusi tinggi.
