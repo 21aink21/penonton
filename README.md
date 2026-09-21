@@ -1,4 +1,4 @@
-# 🎬 LK21 & NontonDrama - Modern Android Movie & Series Streaming App
+# 🎬 PENONTON - Modern Android Movie & Series Streaming App
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/21aink21/LK21/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" height="96" alt="LK21 Logo" />
