@@ -1,5 +1,6 @@
 package com.penonton.ui.dialog
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -7,6 +8,7 @@ import android.view.ViewGroup
 import com.penonton.data.local.StorageManager
 import com.penonton.databinding.LayoutBubbleSizeDialogBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import androidx.core.graphics.toColorInt
 
 class BubbleSizeBottomSheet(
     private val onSizeChanged: (Int) -> Unit
@@ -24,6 +26,7 @@ class BubbleSizeBottomSheet(
         return binding.root
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -69,12 +72,13 @@ class BubbleSizeBottomSheet(
         val bgDrawable = android.graphics.drawable.GradientDrawable().apply {
             shape = android.graphics.drawable.GradientDrawable.RECTANGLE
             this.cornerRadius = cornerRadius
-            setColor(android.graphics.Color.parseColor("#38FC6F01"))
-            setStroke((1.5f * density).toInt(), android.graphics.Color.parseColor("#E6FC6F01"))
+            setColor("#38FC6F01".toColorInt())
+            setStroke((1.5f * density).toInt(), "#E6FC6F01".toColorInt())
         }
         binding.vPreviewBubble.background = bgDrawable
     }
 
+    @SuppressLint("SetTextI18n")
     private fun applyPreset(size: Int) {
         binding.sliderBubbleSize.value = size.toFloat()
         binding.tvSizeValue.text = "$size dp"

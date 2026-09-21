@@ -1,9 +1,9 @@
 package com.penonton.ui.adapter
 
+import android.annotation.SuppressLint
 import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.penonton.R
 import com.penonton.data.model.ServerGroup
@@ -16,6 +16,7 @@ class ServerAdapter(
     private val items = mutableListOf<ServerGroup>()
     private var selectedIndex = 0
 
+    @SuppressLint("NotifyDataSetChanged")
     fun submitList(newItems: List<ServerGroup>, initialSelection: Int = 0) {
         items.clear()
         items.addAll(newItems)

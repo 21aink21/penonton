@@ -1,5 +1,6 @@
 package com.penonton.ui.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -13,6 +14,7 @@ class HistoryAdapter(
 
     private val items = mutableListOf<WatchHistoryItem>()
 
+    @SuppressLint("NotifyDataSetChanged")
     fun submitList(newItems: List<WatchHistoryItem>) {
         items.clear()
         items.addAll(newItems)

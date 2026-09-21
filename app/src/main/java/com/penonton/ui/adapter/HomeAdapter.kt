@@ -1,5 +1,6 @@
 package com.penonton.ui.adapter
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
@@ -49,6 +50,7 @@ class HomeAdapter(
 
     // ── Public API ──────────────────────────────────────────────────────────
 
+    @SuppressLint("NotifyDataSetChanged")
     fun setData(
         newBanners: List<MovieItem>,
         newAnime: List<MovieItem>,
@@ -78,6 +80,7 @@ class HomeAdapter(
         else notifyItemRemoved(itemCount)
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     fun setSearchResult(query: String, results: List<MovieItem>) {
         isSearching = true
         headerTitle = "Hasil Pencarian: $query"
@@ -88,6 +91,7 @@ class HomeAdapter(
         notifyDataSetChanged()
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     fun updateContinueWatching(history: List<WatchHistoryItem>) {
         continueWatching.clear()
         continueWatching.addAll(history.take(10))
@@ -261,13 +265,14 @@ class HomeAdapter(
         fun stopAutoSlide() { handler.removeCallbacks(runnable) }
     }
 
-    inner class HistoryHeaderViewHolder(private val binding: ItemHomeHeaderBinding) :
+    class HistoryHeaderViewHolder(private val binding: ItemHomeHeaderBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(title: String) { binding.tvSectionHeader.text = title }
     }
 
-    inner class ContinueWatchingViewHolder(private val binding: ItemHomeContinueWatchingBinding) :
+    class ContinueWatchingViewHolder(private val binding: ItemHomeContinueWatchingBinding) :
         RecyclerView.ViewHolder(binding.root) {
+        @SuppressLint("SetTextI18n")
         fun bind(items: List<WatchHistoryItem>) {
             val ctx = binding.root.context
             val inflater = LayoutInflater.from(ctx)
@@ -321,7 +326,7 @@ class HomeAdapter(
         }
     }
 
-    inner class HeaderViewHolder(private val binding: ItemHomeHeaderBinding) :
+    class HeaderViewHolder(private val binding: ItemHomeHeaderBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(title: String) { binding.tvSectionHeader.text = title }
     }
@@ -347,6 +352,6 @@ class HomeAdapter(
         }
     }
 
-    inner class LoadingViewHolder(binding: ItemLoadingFooterBinding) :
+    class LoadingViewHolder(binding: ItemLoadingFooterBinding) :
         RecyclerView.ViewHolder(binding.root)
 }

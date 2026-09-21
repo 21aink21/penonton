@@ -1,48 +1,51 @@
 package com.penonton.ui.adapter
 
+import android.annotation.SuppressLint
+import android.graphics.Color
 import android.graphics.Typeface
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.penonton.R
 import com.penonton.data.model.EpisodeItem
 import com.penonton.databinding.ItemEpisodeBinding
+import androidx.core.graphics.toColorInt
 
 class EpisodeAdapter(
     private val onEpisodeClick: (EpisodeItem) -> Unit
-) : RecyclerView.Adapter<EpisodeAdapter.EpisodeViewHolder>() {
+) : ListAdapter<EpisodeItem, EpisodeAdapter.EpisodeViewHolder>(EpisodeDiffCallback()) {
 
-    private val items = mutableListOf<EpisodeItem>()
     private var watchedSet = setOf<String>()
     private var activeNid: Int = -1
 
-    fun submitList(newItems: List<EpisodeItem>, watchedEpisodes: Set<String> = emptySet(), currentNid: Int = -1) {
-        items.clear()
-        items.addAll(newItems)
+    fun submitList(newItems: List<EpisodeItem>?, watchedEpisodes: Set<String> = emptySet(), currentNid: Int = -1) {
         watchedSet = watchedEpisodes
         activeNid = currentNid
-        notifyDataSetChanged()
+        super.submitList(newItems)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EpisodeViewHolder {
         val binding = ItemEpisodeBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return EpisodeViewHolder(binding)
+        return EpisodeViewHolder(binding, onEpisodeClick)
     }
 
     override fun onBindViewHolder(holder: EpisodeViewHolder, position: Int) {
-        holder.bind(items[position])
+        val item = getItem(position)
+        val isWatched = watchedSet.contains(item.episode)
+        val isActive = item.nid == activeNid
+        holder.bind(item, isWatched, isActive)
     }
 
-    override fun getItemCount(): Int = items.size
+    class EpisodeViewHolder(
+        private val binding: ItemEpisodeBinding,
+        private val onEpisodeClick: (EpisodeItem) -> Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
 
-    inner class EpisodeViewHolder(private val binding: ItemEpisodeBinding) :
-        RecyclerView.ViewHolder(binding.root) {
-
-        fun bind(item: EpisodeItem) {
-            val isWatched = watchedSet.contains(item.episode)
-            val isActive = item.nid == activeNid
-
+        @SuppressLint("SetTextI18n")
+        fun bind(item: EpisodeItem, isWatched: Boolean, isActive: Boolean) {
             val isMovie = item.episode.contains("Movie", ignoreCase = true) || item.episode.contains("Film", ignoreCase = true)
 
             if (isMovie) {
@@ -50,30 +53,32 @@ class EpisodeAdapter(
                 binding.tvEpisodeName.textSize = 15f
             } else {
                 val cleanEp = item.episode.replace("EP", "", ignoreCase = true).trim()
-                binding.tvEpisodeName.text = if (cleanEp.isNotEmpty()) cleanEp else "${item.nid}"
+                binding.tvEpisodeName.text = cleanEp.ifEmpty { item.nid.toString() }
                 binding.tvEpisodeName.textSize = 17f
             }
 
             if (isActive) {
-                // Episode Sedang Diputar (Aktif): Latar merah maroon solid (#A11228), teks angka putih bold
                 binding.layoutEpisodeBox.setBackgroundResource(R.drawable.bg_episode_card_active)
-                binding.tvEpisodeName.setTextColor(0xFFFFFFFF.toInt())
+                binding.tvEpisodeName.setTextColor(Color.WHITE)
                 binding.tvEpisodeName.setTypeface(null, Typeface.BOLD)
             } else {
-                // Episode Tersedia: Latar abu-abu gelap transparan (rgba(255,255,255,0.07)), teks angka abu-abu terang
                 binding.layoutEpisodeBox.setBackgroundResource(R.drawable.bg_episode_card_normal)
-                binding.tvEpisodeName.setTextColor(0xFFE2E8F0.toInt())
+                binding.tvEpisodeName.setTextColor("#E2E8F0".toColorInt())
                 binding.tvEpisodeName.setTypeface(null, Typeface.NORMAL)
             }
 
-            // Status Tonton: Ikon tanda centang kecil (checkmark 12x12dp) di pojok kanan atas kartu
-            if (isWatched) {
-                binding.ivWatchedCheckmark.visibility = View.VISIBLE
-            } else {
-                binding.ivWatchedCheckmark.visibility = View.GONE
-            }
-
+            binding.ivWatchedCheckmark.isVisible = isWatched
             binding.root.setOnClickListener { onEpisodeClick(item) }
+        }
+    }
+
+    private class EpisodeDiffCallback : DiffUtil.ItemCallback<EpisodeItem>() {
+        override fun areItemsTheSame(oldItem: EpisodeItem, newItem: EpisodeItem): Boolean {
+            return oldItem.nid == newItem.nid
+        }
+
+        override fun areContentsTheSame(oldItem: EpisodeItem, newItem: EpisodeItem): Boolean {
+            return oldItem == newItem
         }
     }
 }

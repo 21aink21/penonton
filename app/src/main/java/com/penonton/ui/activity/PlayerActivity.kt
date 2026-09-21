@@ -2,28 +2,40 @@ package com.penonton.ui.activity
 
 import android.annotation.SuppressLint
 import android.app.PictureInPictureParams
-import android.content.Context
+import android.content.res.Configuration
+import android.graphics.Rect
 import android.media.AudioManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Rational
-import android.view.*
+import android.view.GestureDetector
+import android.view.HapticFeedbackConstants
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
+import android.view.View
+import android.view.ViewConfiguration
+import android.view.WindowManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.annotation.Keep
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
@@ -31,11 +43,12 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.penonton.R
 import com.penonton.data.local.StorageManager
-import com.penonton.data.model.StreamResult
 import com.penonton.databinding.ActivityPlayerBinding
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
+@OptIn(UnstableApi::class)
+@SuppressLint("SetTextI18n")
 class PlayerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPlayerBinding
@@ -63,9 +76,13 @@ class PlayerActivity : AppCompatActivity() {
     private val speedList = floatArrayOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
     private var currentSpeedIdx = 2
 
-    // Gesture control variables
+    // Smooth Gesture control variables
     private lateinit var audioManager: AudioManager
     private var maxVolume = 15
+    private var initialVolume = 0
+    private var initialBrightness = 0.5f
+    private var touchSlop = 0
+
     private var initialTouchX = 0f
     private var initialTouchY = 0f
     private var isLeftSwipe = false
@@ -83,8 +100,6 @@ class PlayerActivity : AppCompatActivity() {
     private var isFastForwarding = false
     private var previousPlaybackSpeed = 1.0f
 
-    private var isEmbedPlaying = false
-    private var embedStartTimeMs = 0L
     private var currentRawEmbedUrl: String? = null
     private var hasInterceptedM3u8 = false
 
@@ -100,7 +115,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private val hudHandler = Handler(Looper.getMainLooper())
-    private val hideHudRunnable = Runnable { binding.layoutHud.visibility = View.GONE }
+    private val hideHudRunnable = Runnable { binding.layoutHud.isVisible = false }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,8 +125,9 @@ class PlayerActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         storage = StorageManager.getInstance(this)
-        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
         maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        touchSlop = ViewConfiguration.get(this).scaledTouchSlop
 
         movieId = intent.getIntExtra("MEDIA_ID", 0)
         animeTitle = intent.getStringExtra("MEDIA_TITLE") ?: ""
@@ -140,14 +156,15 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun setupPlayerControls() {
-        // Auto-hide controller & top header buttons after 7 seconds for comfortable interaction
         binding.playerView.controllerShowTimeoutMs = 7000
+
+        // Memperbaiki overload resolution ambiguity & type inference error
         binding.playerView.setControllerVisibilityListener(PlayerView.ControllerVisibilityListener { visibility ->
             isControlsVisible = (visibility == View.VISIBLE)
             if (isScreenLocked) return@ControllerVisibilityListener
             if (visibility == View.VISIBLE) {
                 binding.playerHeader.animate().cancel()
-                binding.playerHeader.visibility = View.VISIBLE
+                binding.playerHeader.isVisible = true
                 binding.playerHeader.animate()
                     .alpha(1f)
                     .translationY(0f)
@@ -160,13 +177,12 @@ class PlayerActivity : AppCompatActivity() {
                     .translationY(-binding.playerHeader.height.toFloat().coerceAtLeast(60f))
                     .setDuration(250)
                     .withEndAction {
-                        binding.playerHeader.visibility = View.GONE
+                        binding.playerHeader.isVisible = false
                     }
                     .start()
             }
         })
 
-        // 1. Aspect Ratio Toggle (Resets manual zoom)
         binding.btnAspectRatio.setOnClickListener {
             currentAspectRatioIdx = (currentAspectRatioIdx + 1) % aspectRatios.size
             val (mode, label) = aspectRatios[currentAspectRatioIdx]
@@ -177,7 +193,6 @@ class PlayerActivity : AppCompatActivity() {
             showHud(R.drawable.ic_aspect_ratio, label)
         }
 
-        // 2. Playback Speed Selector Dialog
         binding.btnSpeed.setOnClickListener {
             val speedNames = speedList.map { "${it}x" }.toTypedArray()
             AlertDialog.Builder(this)
@@ -193,19 +208,17 @@ class PlayerActivity : AppCompatActivity() {
                 .show()
         }
 
-        // 3. PiP Mode Button
         binding.btnPip.setOnClickListener {
             enterPipMode()
         }
 
-        // 4. Lock Screen Mode Toggle
         binding.btnLock.setOnClickListener {
             isScreenLocked = true
             isControlsVisible = false
-            binding.playerHeader.visibility = View.GONE
+            binding.playerHeader.isVisible = false
             binding.playerView.hideController()
             binding.playerView.useController = false
-            binding.btnUnlock.visibility = View.VISIBLE
+            binding.btnUnlock.isVisible = true
             showHud(R.drawable.ic_lock, "Layar Terkunci")
         }
 
@@ -214,7 +227,7 @@ class PlayerActivity : AppCompatActivity() {
             isControlsVisible = true
             binding.playerView.useController = true
             binding.playerView.showController()
-            binding.btnUnlock.visibility = View.GONE
+            binding.btnUnlock.isVisible = false
             showHud(R.drawable.ic_lock_open, "Layar Terbuka")
         }
     }
@@ -230,14 +243,26 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    @Deprecated("Deprecated in Java")
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        handlePipChange(isInPictureInPictureMode)
+    }
+
+    @Deprecated("Deprecated in API 31+", ReplaceWith("onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)"))
+    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode)
-        if (isInPictureInPictureMode) {
-            binding.playerHeader.visibility = View.GONE
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            handlePipChange(isInPictureInPictureMode)
+        }
+    }
+
+    private fun handlePipChange(isInPip: Boolean) {
+        if (isInPip) {
+            binding.playerHeader.isVisible = false
             binding.playerView.useController = false
         } else {
-            binding.playerHeader.visibility = if (!isScreenLocked) View.VISIBLE else View.GONE
+            binding.playerHeader.isVisible = !isScreenLocked
             binding.playerView.useController = !isScreenLocked
         }
     }
@@ -287,12 +312,14 @@ class PlayerActivity : AppCompatActivity() {
             }
         })
 
-        // Pinch-to-zoom ScaleGestureDetector (Zoom-in & Zoom-out Manual)
         scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
                 isScaling = true
                 isHorizontalSwipe = false
                 isVerticalSwipe = false
+
+                binding.playerView.pivotX = binding.playerView.width / 2f
+                binding.playerView.pivotY = binding.playerView.height / 2f
                 return true
             }
 
@@ -319,8 +346,8 @@ class PlayerActivity : AppCompatActivity() {
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (isScreenLocked) {
             val unlockView = binding.btnUnlock
-            if (unlockView.visibility == View.VISIBLE) {
-                val rect = android.graphics.Rect()
+            if (unlockView.isVisible) {
+                val rect = Rect()
                 unlockView.getGlobalVisibleRect(rect)
                 if (rect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
                     return super.dispatchTouchEvent(ev)
@@ -329,16 +356,14 @@ class PlayerActivity : AppCompatActivity() {
             return true
         }
 
-        // Allow direct click interaction for top header buttons when visible
-        if (binding.playerHeader.visibility == View.VISIBLE) {
-            val headerRect = android.graphics.Rect()
+        if (binding.playerHeader.isVisible) {
+            val headerRect = Rect()
             binding.playerHeader.getGlobalVisibleRect(headerRect)
             if (headerRect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
                 return super.dispatchTouchEvent(ev)
             }
         }
 
-        // Multi-touch 2-Finger Pinch Zoom-in & Zoom-out
         if (ev.pointerCount >= 2) {
             isHorizontalSwipe = false
             isVerticalSwipe = false
@@ -360,14 +385,17 @@ class PlayerActivity : AppCompatActivity() {
                 initialPositionMs = exoPlayer?.currentPosition ?: 0L
                 videoDurationMs = exoPlayer?.duration?.coerceAtLeast(1L) ?: 1L
                 targetSeekPositionMs = initialPositionMs
+
+                initialVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                val lp = window.attributes
+                initialBrightness = if (lp.screenBrightness < 0) 0.5f else lp.screenBrightness
             }
             MotionEvent.ACTION_MOVE -> {
                 if (!isFastForwarding && !isScaling) {
                     val deltaX = ev.rawX - initialTouchX
                     val deltaY = ev.rawY - initialTouchY
 
-                    // 1. Horizontal Seek Scrubbing Gesture
-                    if (!isVerticalSwipe && abs(deltaX) > 40 && abs(deltaX) > abs(deltaY) * 1.3f) {
+                    if (!isVerticalSwipe && abs(deltaX) > touchSlop && abs(deltaX) > abs(deltaY) * 1.2f) {
                         isHorizontalSwipe = true
                         val seekDeltaMs = ((deltaX / screenWidth) * 90000).toLong()
                         targetSeekPositionMs = (initialPositionMs + seekDeltaMs).coerceIn(0L, videoDurationMs)
@@ -379,22 +407,19 @@ class PlayerActivity : AppCompatActivity() {
 
                         showHud(iconRes, "$sign\n[$timeStr]")
                         return true
-                    }
-                    // 2. Vertical Brightness / Volume Gesture
-                    else if (!isHorizontalSwipe && abs(deltaY) > 35 && abs(deltaY) > abs(deltaX) * 1.3f) {
+                    } else if (!isHorizontalSwipe && abs(deltaY) > touchSlop && abs(deltaY) > abs(deltaX) * 1.2f) {
                         isVerticalSwipe = true
-                        val percentDelta = -deltaY / screenHeight
+                        val deltaPercent = -deltaY / screenHeight
+
                         if (isLeftSwipe) {
                             val lp = window.attributes
-                            val currentBrightness = if (lp.screenBrightness < 0) 0.5f else lp.screenBrightness
-                            val newBrightness = (currentBrightness + percentDelta * 0.08f).coerceIn(0.01f, 1.0f)
+                            val newBrightness = (initialBrightness + deltaPercent * 1.2f).coerceIn(0.01f, 1.0f)
                             lp.screenBrightness = newBrightness
                             window.attributes = lp
                             showHud(R.drawable.ic_brightness, "Kecerahan: ${(newBrightness * 100).toInt()}%")
                         } else {
-                            val currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-                            val volChange = (percentDelta * maxVolume * 0.4f).toInt()
-                            val newVol = (currentVol + volChange).coerceIn(0, maxVolume)
+                            val volDelta = (deltaPercent * maxVolume * 1.2f).toInt()
+                            val newVol = (initialVolume + volDelta).coerceIn(0, maxVolume)
                             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVol, 0)
                             val volPercent = ((newVol.toFloat() / maxVolume) * 100).toInt()
                             showHud(R.drawable.ic_volume, "Volume: $volPercent%")
@@ -442,7 +467,7 @@ class PlayerActivity : AppCompatActivity() {
     private fun showHud(iconRes: Int, text: String, autoHide: Boolean = true) {
         binding.ivHudIcon.setImageResource(iconRes)
         binding.tvHudText.text = text
-        binding.layoutHud.visibility = View.VISIBLE
+        binding.layoutHud.isVisible = true
 
         hudHandler.removeCallbacks(hideHudRunnable)
         if (autoHide) {
@@ -451,7 +476,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun loadStream() {
-        binding.playerProgressBar.visibility = View.VISIBLE
+        binding.playerProgressBar.isVisible = true
         hasInterceptedM3u8 = false
         val playUrl = intent.getStringExtra("PLAY_URL")
             ?: intent.getStringExtra("MEDIA_URL")
@@ -467,7 +492,7 @@ class PlayerActivity : AppCompatActivity() {
                     fallbackUrl = playUrl,
                     title = animeTitle
                 )
-                binding.playerProgressBar.visibility = View.GONE
+                binding.playerProgressBar.isVisible = false
                 currentRawEmbedUrl = stream.embedUrl
                 if (currentPlayUrl.isEmpty() && stream.rawUrl.isNotEmpty()) {
                     currentPlayUrl = stream.rawUrl
@@ -481,15 +506,15 @@ class PlayerActivity : AppCompatActivity() {
                     Toast.makeText(this@PlayerActivity, "Stream tidak dapat dimuat", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                binding.playerProgressBar.visibility = View.GONE
+                binding.playerProgressBar.isVisible = false
                 Toast.makeText(this@PlayerActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    private fun playHlsStream(m3u8Url: String, provider: String = "") {
-        binding.webViewPlayer.visibility = View.GONE
-        binding.playerView.visibility = View.VISIBLE
+    private fun playHlsStream(m3u8Url: String) {
+        binding.webViewPlayer.isVisible = false
+        binding.playerView.isVisible = true
 
         val referer = when {
             m3u8Url.contains("playcdn.de") -> "https://playcdn.de/"
@@ -511,7 +536,7 @@ class PlayerActivity : AppCompatActivity() {
             .setAllowCrossProtocolRedirects(true)
 
         val mediaItem = MediaItem.Builder()
-            .setUri(Uri.parse(m3u8Url))
+            .setUri(m3u8Url.toUri())
             .setMimeType(MimeTypes.APPLICATION_M3U8)
             .build()
 
@@ -532,9 +557,9 @@ class PlayerActivity : AppCompatActivity() {
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(state: Int) {
                     when (state) {
-                        Player.STATE_BUFFERING -> binding.playerProgressBar.visibility = View.VISIBLE
+                        Player.STATE_BUFFERING -> binding.playerProgressBar.isVisible = true
                         Player.STATE_READY -> {
-                            binding.playerProgressBar.visibility = View.GONE
+                            binding.playerProgressBar.isVisible = false
                             if (!hasAppliedResumePosition && targetPos > 1000L) {
                                 hasAppliedResumePosition = true
                                 if (abs(currentPosition - targetPos) > 2000L) {
@@ -546,7 +571,7 @@ class PlayerActivity : AppCompatActivity() {
                             }
                         }
                         Player.STATE_ENDED -> {
-                            binding.playerProgressBar.visibility = View.GONE
+                            binding.playerProgressBar.isVisible = false
                             Toast.makeText(this@PlayerActivity, "Episode selesai", Toast.LENGTH_SHORT).show()
                         }
                         else -> {}
@@ -562,7 +587,7 @@ class PlayerActivity : AppCompatActivity() {
                 }
 
                 override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                    binding.playerProgressBar.visibility = View.GONE
+                    binding.playerProgressBar.isVisible = false
                     val fallback = currentRawEmbedUrl ?: m3u8Url
                     if (fallback.isNotEmpty()) {
                         playEmbedStream(fallback)
@@ -576,11 +601,8 @@ class PlayerActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun playEmbedStream(embedUrl: String) {
-        binding.playerView.visibility = View.GONE
-        binding.webViewPlayer.visibility = View.VISIBLE
-
-        isEmbedPlaying = true
-        embedStartTimeMs = System.currentTimeMillis()
+        binding.playerView.isVisible = false
+        binding.webViewPlayer.isVisible = true
 
         val targetPos = initialResumePositionMs
         val startSec = if (targetPos > 1000L) targetPos / 1000.0 else 0.0
@@ -594,17 +616,19 @@ class PlayerActivity : AppCompatActivity() {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
-            allowFileAccess = true
-            allowContentAccess = true
+            allowFileAccess = false
+            allowContentAccess = false
             mediaPlaybackRequiresUserGesture = false
-            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             setSupportMultipleWindows(false)
             javaScriptCanOpenWindowsAutomatically = false
             userAgentString = "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
         }
 
         binding.webViewPlayer.addJavascriptInterface(object {
-            @android.webkit.JavascriptInterface
+            @Keep
+            @JavascriptInterface
+            @Suppress("unused")
             fun onTimeUpdate(currentTimeSec: Float, durationSec: Float) {
                 val posMs = (currentTimeSec * 1000).toLong()
                 val durMs = (durationSec * 1000).toLong()
@@ -639,10 +663,7 @@ class PlayerActivity : AppCompatActivity() {
                 val allowedHosts = listOf("videonode.de", "playcdn.de", "lk21official.cc", "nontondrama.my", "gudangvape.com", "dailymotion.com", "geo.dailymotion.com", "dmcdn.net", "rumble.com", "rumble.cloud")
                 val isHostAllowed = allowedHosts.any { uri.host?.contains(it) == true }
 
-                if (!isHostAllowed || url.startsWith("intent:") || url.startsWith("market:") || url.startsWith("whatsapp:") || url.startsWith("tg:")) {
-                    return true
-                }
-                return false
+                return !isHostAllowed || url.startsWith("intent:") || url.startsWith("market:") || url.startsWith("whatsapp:") || url.startsWith("tg:")
             }
 
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): android.webkit.WebResourceResponse? {
@@ -665,7 +686,7 @@ class PlayerActivity : AppCompatActivity() {
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
-                binding.playerProgressBar.visibility = View.GONE
+                binding.playerProgressBar.isVisible = false
 
                 val adBlockJs = """
                     javascript:(function() {
@@ -691,8 +712,7 @@ class PlayerActivity : AppCompatActivity() {
             assets.open("hls.min.js").bufferedReader().use { it.readText() }
         } catch (_: Exception) { "" }
 
-        val playUrl = intent.getStringExtra("PLAY_URL") ?: intent.getStringExtra("MEDIA_URL") ?: ""
-        val baseUrl = if (playUrl.contains("nontondrama") || embedUrl.contains("nontondrama")) {
+        val baseUrl = if (currentPlayUrl.contains("nontondrama") || embedUrl.contains("nontondrama")) {
             "https://tv9.nontondrama.my/"
         } else {
             "https://tv12.lk21official.cc/"

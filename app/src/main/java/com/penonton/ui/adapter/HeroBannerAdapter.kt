@@ -1,5 +1,6 @@
 package com.penonton.ui.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
@@ -15,6 +16,7 @@ class HeroBannerAdapter(
 
     private val items = mutableListOf<MovieItem>()
 
+    @SuppressLint("NotifyDataSetChanged")
     fun submitList(newItems: List<MovieItem>) {
         items.clear()
         items.addAll(newItems)
@@ -45,6 +47,7 @@ class HeroBannerAdapter(
     inner class BannerViewHolder(private val binding: ItemHeroBannerBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
+        @SuppressLint("SetTextI18n")
         fun bind(item: MovieItem, rank: Int) {
             binding.tvBannerTitle.text = item.title
             binding.tvBannerRank.text = "🔥 Top #$rank"
@@ -57,7 +60,7 @@ class HeroBannerAdapter(
                 binding.tvBannerCountry.visibility = android.view.View.GONE
             }
 
-            binding.tvBannerEp.text = if (item.latestEp.isNotEmpty()) item.latestEp else "HD"
+            binding.tvBannerEp.text = item.latestEp.ifEmpty { "HD" }
             binding.tvBannerRating.text = if (item.rating.isNotEmpty()) "★ ${item.rating}" else "★ 9.0"
 
             resetZoom()

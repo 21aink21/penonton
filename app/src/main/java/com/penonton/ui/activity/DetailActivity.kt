@@ -1,26 +1,32 @@
 package com.penonton.ui.activity
 
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.LinearGradient
+import android.graphics.Shader
 import android.os.Bundle
-import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.toColorInt
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.material.tabs.TabLayout
 import com.penonton.R
 import com.penonton.data.local.StorageManager
+import com.penonton.data.model.EpisodeItem
 import com.penonton.data.model.MovieDetail
 import com.penonton.data.model.MovieItem
-import com.penonton.data.model.EpisodeItem
 import com.penonton.databinding.ActivityDetailBinding
 import com.penonton.ui.adapter.EpisodeAdapter
 import com.penonton.ui.adapter.ServerAdapter
 import com.penonton.ui.viewmodel.DetailViewModel
+import com.penonton.util.CountryUtils
 import com.penonton.util.GradientBackground
 import com.penonton.util.loadPoster
-import com.google.android.material.tabs.TabLayout
 
+@SuppressLint("SetTextI18n")
 class DetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailBinding
@@ -29,6 +35,8 @@ class DetailActivity : AppCompatActivity() {
 
     private lateinit var serverAdapter: ServerAdapter
     private lateinit var episodeAdapter: EpisodeAdapter
+    private var gridLayoutManager: GridLayoutManager? = null
+
     private var currentDetail: MovieDetail? = null
     private var movieId: Int = 0
     private var isSynopsisExpanded = false
@@ -47,13 +55,7 @@ class DetailActivity : AppCompatActivity() {
         val initialUrl = intent.getStringExtra("MEDIA_URL") ?: ""
 
         if (initialTitle.isNotEmpty()) binding.tvDetailTitle.text = initialTitle
-        if (initialPoster.isNotEmpty()) {
-            binding.ivBackdrop.loadPoster(initialPoster)
-        }
-
-        if (initialUrl.isNotEmpty()) {
-            com.penonton.data.parser.Lk21Parser.registerUrl(movieId, initialUrl)
-                    }
+        if (initialPoster.isNotEmpty()) binding.ivBackdrop.loadPoster(initialPoster)
 
         binding.btnBack.setOnClickListener { finish() }
 
@@ -75,16 +77,16 @@ class DetailActivity : AppCompatActivity() {
             val text = binding.tvWatermarkText.text.toString()
             val textWidth = binding.tvWatermarkText.paint.measureText(text)
             if (textWidth > 0) {
-                val shader = android.graphics.LinearGradient(
+                val shader = LinearGradient(
                     0f, 0f, textWidth, 0f,
                     intArrayOf(
-                        0xFFFB9E0C.toInt(), // Amber Gold / Orange (Icon Left)
-                        0xFFF34390.toInt(), // Vibrant Rose Pink (Icon Center)
-                        0xFF9425EE.toInt(), // Royal Violet / Purple (Icon Right)
-                        0xFF049CFC.toInt()  // Electric Cyan Blue (Icon Accent)
+                        "#FB9E0C".toColorInt(),
+                        "#F34390".toColorInt(),
+                        "#9425EE".toColorInt(),
+                        "#049CFC".toColorInt()
                     ),
                     floatArrayOf(0.0f, 0.35f, 0.70f, 1.0f),
-                    android.graphics.Shader.TileMode.CLAMP
+                    Shader.TileMode.CLAMP
                 )
                 binding.tvWatermarkText.paint.shader = shader
                 binding.tvWatermarkText.invalidate()
@@ -99,7 +101,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun setupHeroPlay() {
-        val playAction = View.OnClickListener {
+        binding.playerContainer.setOnClickListener {
             val lastWatched = storage.getLastWatched(movieId)
             val firstEpisode = currentDetail?.servers?.getOrNull(selectedServerIdx)?.episodes?.firstOrNull()
                 ?: currentDetail?.servers?.firstOrNull()?.episodes?.firstOrNull()
@@ -124,12 +126,9 @@ class DetailActivity : AppCompatActivity() {
                 Toast.makeText(this, "Memuat daftar episode...", Toast.LENGTH_SHORT).show()
             }
         }
-
-        binding.playerContainer.setOnClickListener(playAction)
     }
 
     private fun setupActionButtons() {
-        // 1. +Daftar Saya (Favorite)
         updateFavoriteButtonState()
         binding.btnActionFavorite.setOnClickListener {
             val item = MovieItem(
@@ -146,12 +145,10 @@ class DetailActivity : AppCompatActivity() {
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
 
-        // 2. Unduh
         binding.btnActionDownload.setOnClickListener {
             Toast.makeText(this, "Film/Episode tersimpan di cache untuk pemutaran instan!", Toast.LENGTH_SHORT).show()
         }
 
-        // 3. Bagikan
         binding.btnActionShare.setOnClickListener {
             val title = currentDetail?.title ?: "LK21 Movie & Series"
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -162,38 +159,34 @@ class DetailActivity : AppCompatActivity() {
             startActivity(Intent.createChooser(shareIntent, "Bagikan ke:"))
         }
 
-        // 4. 1080P En / Kualitas
         binding.btnActionQuality.setOnClickListener {
             binding.tabDetail.getTabAt(1)?.select()
-            binding.layoutServerSection.visibility = View.VISIBLE
         }
     }
 
     private fun updateFavoriteButtonState() {
         val isFav = storage.isFavorite(movieId)
+        val primaryColor = ContextCompat.getColor(this, R.color.primary)
+        val defaultColor = "#A0A0A0".toColorInt()
+
         if (isFav) {
             binding.ivActionFavorite.setImageResource(R.drawable.ic_favorite_filled)
-            binding.ivActionFavorite.setColorFilter(ContextCompat.getColor(this, R.color.primary))
+            binding.ivActionFavorite.setColorFilter(primaryColor)
             binding.tvActionFavorite.text = "✓ Tersimpan"
-            binding.tvActionFavorite.setTextColor(ContextCompat.getColor(this, R.color.primary))
+            binding.tvActionFavorite.setTextColor(primaryColor)
         } else {
             binding.ivActionFavorite.setImageResource(R.drawable.ic_favorite)
-            binding.ivActionFavorite.setColorFilter(0xFFA0A0A0.toInt())
+            binding.ivActionFavorite.setColorFilter(defaultColor)
             binding.tvActionFavorite.text = "+Daftar Saya"
-            binding.tvActionFavorite.setTextColor(0xFFA0A0A0.toInt())
+            binding.tvActionFavorite.setTextColor(defaultColor)
         }
     }
 
     private fun setupSynopsisToggle() {
         binding.btnToggleSynopsis.setOnClickListener {
             isSynopsisExpanded = !isSynopsisExpanded
-            if (isSynopsisExpanded) {
-                binding.tvSynopsis.maxLines = 100
-                binding.btnToggleSynopsis.text = "Tutup ▴"
-            } else {
-                binding.tvSynopsis.maxLines = 3
-                binding.btnToggleSynopsis.text = "Lihat Selengkapnya ▸"
-            }
+            binding.tvSynopsis.maxLines = if (isSynopsisExpanded) 100 else 3
+            binding.btnToggleSynopsis.text = if (isSynopsisExpanded) "Tutup ▴" else "Lihat Selengkapnya ▸"
         }
     }
 
@@ -202,14 +195,12 @@ class DetailActivity : AppCompatActivity() {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 when (tab?.position) {
                     0 -> {
-                        // Tab Episode
-                        binding.layoutServerSection.visibility = View.VISIBLE
-                        binding.layoutEpisodeSection.visibility = View.VISIBLE
+                        binding.layoutEpisodeSection.isVisible = true
+                        binding.layoutServerSection.isVisible = false
                     }
                     1 -> {
-                        // Tab Server / Kualitas
-                        binding.layoutServerSection.visibility = View.VISIBLE
-                        binding.layoutEpisodeSection.visibility = View.VISIBLE
+                        binding.layoutEpisodeSection.isVisible = false
+                        binding.layoutServerSection.isVisible = true
                     }
                 }
             }
@@ -230,10 +221,9 @@ class DetailActivity : AppCompatActivity() {
         }
         binding.rvServers.adapter = serverAdapter
 
-        episodeAdapter = EpisodeAdapter { episode ->
-            playEpisode(episode)
-        }
-        binding.rvEpisodes.layoutManager = GridLayoutManager(this, 4)
+        episodeAdapter = EpisodeAdapter { episode -> playEpisode(episode) }
+        gridLayoutManager = GridLayoutManager(this, 4)
+        binding.rvEpisodes.layoutManager = gridLayoutManager
         binding.rvEpisodes.adapter = episodeAdapter
     }
 
@@ -245,6 +235,7 @@ class DetailActivity : AppCompatActivity() {
             storage.getEpisodePosition(movieId, episode.nid)
         }
         val moviePageUrl = intent.getStringExtra("MEDIA_URL") ?: currentDetail?.servers?.firstOrNull()?.episodes?.firstOrNull()?.playUrl ?: ""
+
         val intent = Intent(this, PlayerActivity::class.java).apply {
             putExtra("MEDIA_ID", movieId)
             putExtra("EPISODE_ID", episode.id)
@@ -271,16 +262,39 @@ class DetailActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("DefaultLocale")
     private fun setupObservers() {
         viewModel.detail.observe(this) { detail ->
             if (detail != null) {
                 currentDetail = detail
                 bindDetail(detail)
+
+                // Cari metadata dari TMDb/IMDb berdasarkan judul film/series
+                viewModel.fetchExternalMetadata(detail.title)
+            }
+        }
+
+        // Observer untuk hasil pencarian metadata dari TMDb/IMDb
+        viewModel.tmdbMetadata.observe(this) { tmdb ->
+            if (tmdb != null) {
+                // 1. Update Rating IMDb/TMDb
+                binding.tvRatingDetail.text = String.format("%.1f", tmdb.voteAverage)
+
+                // 2. Update Sinopsis jika sinopsis bawaan lokal kosong
+                if (binding.tvSynopsis.text.contains("Belum ada deskripsi")) {
+                    binding.tvSynopsis.text = tmdb.overview.ifEmpty { "Deskripsi tidak tersedia." }
+                }
+
+                // 3. Update Backdrop Poster Kualitas Tinggi
+                tmdb.backdropPath?.let { path ->
+                    val highResUrl = "https://image.tmdb.org/t/p/w780$path"
+                    binding.ivBackdrop.loadPoster(highResUrl)
+                }
             }
         }
 
         viewModel.isLoading.observe(this) { loading ->
-            binding.detailProgressBar.visibility = if (loading) View.VISIBLE else View.GONE
+            binding.detailProgressBar.isVisible = loading
         }
     }
 
@@ -290,7 +304,6 @@ class DetailActivity : AppCompatActivity() {
         binding.tvDetailStatus.text = if (isMovie) "Movie HD" else detail.status.ifEmpty { "Series" }
         binding.tvSynopsis.text = detail.synopsis.ifEmpty { "Belum ada deskripsi tersedia." }
 
-        // Adjust Tab Titles
         binding.tabDetail.getTabAt(0)?.text = if (isMovie) "Putar Film" else "Episode"
         binding.tabDetail.getTabAt(1)?.text = if (isMovie) "Server Player" else "Season"
 
@@ -299,24 +312,20 @@ class DetailActivity : AppCompatActivity() {
 
         val country = detail.meta["country"] ?: detail.meta["negara"] ?: ""
         val countryBadge = if (country.isNotEmpty()) {
-            com.penonton.util.CountryUtils.formatCountry(country)
+            CountryUtils.formatCountry(country)
         } else {
-            com.penonton.util.CountryUtils.getCountryBadge(MovieItem(detail.id, detail.title, "", "", "", ""))
+            CountryUtils.getCountryBadge(MovieItem(detail.id, detail.title, "", "", "", ""))
         }
 
-        if (countryBadge.isNotEmpty()) {
-            binding.tvDetailCountry.visibility = View.VISIBLE
-            binding.tvDetailCountry.text = countryBadge
-        } else {
-            binding.tvDetailCountry.visibility = View.GONE
-        }
+        binding.tvDetailCountry.isVisible = countryBadge.isNotEmpty()
+        binding.tvDetailCountry.text = countryBadge
 
         val metaParts = mutableListOf<String>()
         detail.meta["year"]?.let { metaParts.add(it) }
         if (country.isNotEmpty()) metaParts.add(country)
         detail.meta["genre"]?.let { metaParts.add(it) }
         detail.meta["duration"]?.let { metaParts.add(it) }
-        
+
         binding.tvDetailMeta.text = if (metaParts.isNotEmpty()) {
             metaParts.joinToString(" • ")
         } else {
@@ -325,8 +334,7 @@ class DetailActivity : AppCompatActivity() {
 
         binding.ivBackdrop.loadPoster(detail.poster)
 
-        // Set layout manager: 1 full-width column for movie, 4 columns for series episodes
-        binding.rvEpisodes.layoutManager = GridLayoutManager(this, if (isMovie) 1 else 4)
+        gridLayoutManager?.spanCount = if (isMovie) 1 else 4
 
         val watchedSet = storage.getWatchedEpisodes(movieId)
         val lastWatched = storage.getLastWatched(movieId)

@@ -1,3 +1,5 @@
+@file:Suppress("MISSING_DEPENDENCY_IN_INFERRED_TYPE_ANNOTATION_WARNING")
+
 package com.penonton.data.parser
 
 import android.util.LruCache
@@ -34,10 +36,7 @@ object Lk21Parser {
 
     private val gson = Gson()
 
-    // Caches
-    private var cachedBanners: Pair<Long, List<MovieItem>>? = null
     private var cachedLatest: Pair<Long, List<MovieItem>>? = null
-    private var cachedSchedule: Pair<Long, List<WeekdaySchedule>>? = null
     private var cachedRankings: Pair<Long, List<MovieItem>>? = null
     private var cachedSeriesRankings: Pair<Long, List<MovieItem>>? = null
     private val detailCache = LruCache<Int, MovieDetail>(50)
@@ -110,7 +109,7 @@ object Lk21Parser {
         var poster = article.selectFirst("picture img")?.let {
             val dSrc = it.attr("data-src")
             val src = it.attr("src")
-            if (dSrc.isNotEmpty()) dSrc else src
+            dSrc.ifEmpty { src }
         } ?: article.selectFirst("img")?.attr("src") ?: ""
 
         if (poster.startsWith("/")) {
@@ -169,7 +168,7 @@ object Lk21Parser {
                     val badge = if (type == "series") {
                         if (ep.isNotEmpty() && ep != "0") "EPS $ep" else "Series"
                     } else {
-                        itemObj.get("quality")?.asString ?: if (yearVal.isNotEmpty()) yearVal else "Movie"
+                        itemObj.get("quality")?.asString ?: yearVal.ifEmpty { "Movie" }
                     }
 
                     val country = idToCountryMap[id] ?: ""
@@ -233,52 +232,6 @@ object Lk21Parser {
     }
 
     // =========================================================================
-    // 3. FEATURED BANNERS (MOVIES & SERIES)
-    // =========================================================================
-    suspend fun getFeaturedBanners(forceRefresh: Boolean = false): List<MovieItem> = withContext(Dispatchers.IO) {
-        val now = System.currentTimeMillis()
-        if (!forceRefresh && cachedBanners != null && (now - cachedBanners!!.first) < CACHE_EXPIRY_MS) {
-            return@withContext cachedBanners!!.second
-        }
-
-        val html = fetchHtml(MOVIE_BASE)
-        val doc = Jsoup.parse(html)
-        val items = mutableListOf<MovieItem>()
-
-        for (card in doc.select("div.featured-slider article, div.sliders article, article").take(8)) {
-            parseCard(card, MOVIE_BASE)?.let { items.add(it) }
-        }
-
-        if (items.isNotEmpty()) {
-            cachedBanners = Pair(now, items)
-        }
-        items
-    }
-
-    private var cachedSeriesBanners: Pair<Long, List<MovieItem>>? = null
-
-    suspend fun getFeaturedSeriesBanners(forceRefresh: Boolean = false): List<MovieItem> = withContext(Dispatchers.IO) {
-        val now = System.currentTimeMillis()
-        if (!forceRefresh && cachedSeriesBanners != null && (now - cachedSeriesBanners!!.first) < CACHE_EXPIRY_MS) {
-            return@withContext cachedSeriesBanners!!.second
-        }
-
-        val url = "$SERIES_BASE/top-series-today/page/1"
-        val html = fetchHtml(url)
-        val doc = Jsoup.parse(html)
-        val items = mutableListOf<MovieItem>()
-
-        for (card in doc.select("div.featured-slider article, div.sliders article, article").take(8)) {
-            parseCard(card, SERIES_BASE)?.let { items.add(it) }
-        }
-
-        if (items.isNotEmpty()) {
-            cachedSeriesBanners = Pair(now, items)
-        }
-        items
-    }
-
-    // =========================================================================
     // 4. RANKINGS (TOP MOVIES & TOP SERIES)
     // =========================================================================
     suspend fun getRankings(forceRefresh: Boolean = false, type: String = "movie"): List<MovieItem> = withContext(Dispatchers.IO) {
@@ -319,50 +272,6 @@ object Lk21Parser {
             }
             items
         }
-    }
-
-    // =========================================================================
-    // 5. SERIES CATEGORIES (NONTONDRAMA)
-    // =========================================================================
-    suspend fun getWeeklySchedule(forceRefresh: Boolean = false): List<WeekdaySchedule> = withContext(Dispatchers.IO) {
-        val now = System.currentTimeMillis()
-        if (!forceRefresh && cachedSchedule != null && (now - cachedSchedule!!.first) < CACHE_EXPIRY_MS) {
-            return@withContext cachedSchedule!!.second
-        }
-
-        val categories = listOf(
-            Triple(1, "Terbaru", "$SERIES_BASE/latest-series/page/1"),
-            Triple(2, "Unggulan", "$SERIES_BASE/top-series-today/page/1"),
-            Triple(3, "Ongoing", "$SERIES_BASE/series/ongoing/page/1"),
-            Triple(4, "Complete", "$SERIES_BASE/series/complete/page/1"),
-            Triple(5, "Asian Series", "$SERIES_BASE/series/asian/page/1"),
-            Triple(6, "West Series", "$SERIES_BASE/series/west/page/1"),
-            Triple(7, "Drakor", "$SERIES_BASE/maraton-drakor")
-        )
-
-        val schedules = mutableListOf<WeekdaySchedule>()
-        for ((idx, title, catUrl) in categories) {
-            val list = mutableListOf<MovieItem>()
-            val defaultCountry = when (idx) {
-                5 -> "Asian"
-                6 -> "United States"
-                7 -> "South Korea"
-                else -> ""
-            }
-            try {
-                val html = fetchHtml(catUrl)
-                val doc = Jsoup.parse(html)
-                for (card in doc.select("article").take(20)) {
-                    parseCard(card, SERIES_BASE, defaultCountry)?.let { list.add(it) }
-                }
-            } catch (_: Exception) {}
-            schedules.add(WeekdaySchedule(idx, title, list))
-        }
-
-        if (schedules.isNotEmpty()) {
-            cachedSchedule = Pair(now, schedules)
-        }
-        schedules
     }
 
     fun registerUrl(id: Int, url: String) {
@@ -442,7 +351,6 @@ object Lk21Parser {
                             val epObj = epElem.asJsonObject
                             val epSlug = epObj.get("slug")?.asString ?: continue
                             val epNo = epObj.get("episode_no")?.asInt ?: (idx + 1)
-                            val epTitle = epObj.get("title")?.asString ?: "Episode $epNo"
                             val epUrl = if (epSlug.startsWith("http")) epSlug else "$SERIES_BASE/$epSlug"
                             val epId = epSlug.hashCode()
                             idToUrlMap[epId] = epUrl
@@ -662,10 +570,10 @@ object Lk21Parser {
                                 sid = sid,
                                 nid = nid,
                                 provider = "playcdn",
-                                rawUrl = directM3u8!!,
+                                rawUrl = directM3u8,
                                 m3u8Url = directM3u8,
                                 embedUrl = null,
-                                qualities = mapOf("Auto" to directM3u8!!),
+                                qualities = mapOf("Auto" to directM3u8),
                                 linkNext = null,
                                 linkPre = null
                             )

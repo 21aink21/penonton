@@ -1,5 +1,6 @@
 package com.penonton.ui.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,6 +16,7 @@ class ScheduleAdapter(
 
     private val items = mutableListOf<MovieItem>()
 
+    @SuppressLint("NotifyDataSetChanged")
     fun submitList(newItems: List<MovieItem>) {
         items.clear()
         items.addAll(newItems)

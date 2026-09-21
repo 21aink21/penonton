@@ -14,8 +14,9 @@ import com.penonton.ui.fragment.HomeFragment
 import com.penonton.ui.fragment.LibraryFragment
 import com.penonton.ui.fragment.RankingFragment
 import com.penonton.ui.fragment.ScheduleFragment
-import com.penonton.util.GradientBackground
 import com.penonton.util.loadPoster
+import androidx.core.graphics.toColorInt
+import androidx.core.view.isVisible
 
 class MainActivity : AppCompatActivity() {
 
@@ -200,8 +201,8 @@ class MainActivity : AppCompatActivity() {
         val bgDrawable = android.graphics.drawable.GradientDrawable().apply {
             shape = android.graphics.drawable.GradientDrawable.RECTANGLE
             this.cornerRadius = cornerRadius
-            setColor(android.graphics.Color.parseColor("#38FC6F01"))
-            setStroke((1.5f * density).toInt(), android.graphics.Color.parseColor("#E6FC6F01"))
+            setColor("#38FC6F01".toColorInt())
+            setStroke((1.5f * density).toInt(), "#E6FC6F01".toColorInt())
         }
         binding.vNavBubbleIndicator.background = bgDrawable
 
@@ -310,7 +311,7 @@ class MainActivity : AppCompatActivity() {
         // Back press handling: auto-hide search if open
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (binding.layoutHeaderSearchBar.visibility == View.VISIBLE) {
+                if (binding.layoutHeaderSearchBar.isVisible) {
                     closeHeaderSearch()
                 } else {
                     isEnabled = false
@@ -367,13 +368,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun showKeyboard(view: View) {
         view.postDelayed({
-            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
             imm?.showSoftInput(view, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
         }, 100)
     }
 
     private fun hideKeyboard(view: View) {
-        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
         imm?.hideSoftInputFromWindow(view.windowToken, 0)
     }
 }

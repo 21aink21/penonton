@@ -1,5 +1,6 @@
 package com.penonton.ui.fragment
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -96,6 +97,7 @@ class LibraryFragment : Fragment() {
         refreshData()
     }
 
+    @SuppressLint("SetTextI18n")
     private fun refreshData() {
         if (currentTab == 0) {
             // Watch History

@@ -1,5 +1,6 @@
 package com.penonton.ui.widget
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
@@ -15,6 +16,7 @@ class FadingImageView @JvmOverloads constructor(
         xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
     }
 
+    @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         val w = width.toFloat()
         val h = height.toFloat()

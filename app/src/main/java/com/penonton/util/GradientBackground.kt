@@ -3,13 +3,14 @@ package com.penonton.util
 import android.app.Activity
 import android.graphics.drawable.ColorDrawable
 import android.view.View
+import androidx.core.graphics.drawable.toDrawable
 
 object GradientBackground {
 
     const val COLOR_BASE = 0xFF000000.toInt()
 
     fun createDrawable(): ColorDrawable {
-        return ColorDrawable(COLOR_BASE)
+        return COLOR_BASE.toDrawable()
     }
 
     fun apply(activity: Activity) {

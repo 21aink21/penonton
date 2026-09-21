@@ -6,6 +6,7 @@ import com.penonton.data.model.MovieItem
 import com.penonton.data.model.WatchHistoryItem
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import androidx.core.content.edit
 
 class StorageManager(context: Context) {
 
@@ -40,8 +41,8 @@ class StorageManager(context: Context) {
                 ?: 0L
         }
 
-        val finalPlayUrl = if (playUrl.isNotEmpty()) playUrl else (oldItem?.playUrl ?: "")
-        val finalMovieUrl = if (movieUrl.isNotEmpty()) movieUrl else (oldItem?.movieUrl ?: "")
+        val finalPlayUrl = playUrl.ifEmpty { (oldItem?.playUrl ?: "") }
+        val finalMovieUrl = movieUrl.ifEmpty { (oldItem?.movieUrl ?: "") }
 
         val item = WatchHistoryItem(
             movieId = movieId,
@@ -59,11 +60,11 @@ class StorageManager(context: Context) {
         list.add(0, item) // Add to top
         if (list.size > 50) list.removeAt(list.size - 1) // Keep latest 50
 
-        prefs.edit()
-            .putString(KEY_HISTORY, gson.toJson(list))
-            .putLong("ep_pos_${movieId}_$nid", positionMs)
-            .putLong("ep_dur_${movieId}_$nid", finalDuration)
-            .apply()
+        prefs.edit {
+            putString(KEY_HISTORY, gson.toJson(list))
+                .putLong("ep_pos_${movieId}_$nid", positionMs)
+                .putLong("ep_dur_${movieId}_$nid", finalDuration)
+        }
 
         // Also mark episode as watched
         markEpisodeWatched(movieId, episodeName)
@@ -92,7 +93,7 @@ class StorageManager(context: Context) {
     }
 
     fun clearHistory() {
-        prefs.edit().remove(KEY_HISTORY).apply()
+        prefs.edit { remove(KEY_HISTORY) }
     }
 
     // ==========================================
@@ -103,7 +104,7 @@ class StorageManager(context: Context) {
         val key = "${KEY_WATCHED_EPS}_$movieId"
         val set = prefs.getStringSet(key, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
         set.add(episodeName)
-        prefs.edit().putStringSet(key, set).apply()
+        prefs.edit { putStringSet(key, set) }
     }
 
     fun getWatchedEpisodes(movieId: Int): Set<String> {
@@ -123,7 +124,7 @@ class StorageManager(context: Context) {
         } else {
             list.add(0, anime)
         }
-        prefs.edit().putString(KEY_FAVORITES, gson.toJson(list)).apply()
+        prefs.edit { putString(KEY_FAVORITES, gson.toJson(list)) }
         return !exists // Returns true if added, false if removed
     }
 
@@ -146,7 +147,7 @@ class StorageManager(context: Context) {
     }
 
     fun setBubbleSize(sizeDp: Int) {
-        prefs.edit().putInt(KEY_BUBBLE_SIZE, sizeDp).apply()
+        prefs.edit { putInt(KEY_BUBBLE_SIZE, sizeDp) }
     }
 
     companion object {

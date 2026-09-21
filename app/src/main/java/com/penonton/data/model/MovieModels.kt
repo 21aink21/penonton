@@ -65,8 +65,3 @@ data class WatchHistoryItem(
     val movieUrl: String = ""
 ) : Serializable
 
-data class WeekdaySchedule(
-    val dayIndex: Int, // 1=Mon, 2=Tue, ..., 7=Sun
-    val dayName: String, // Senin, Selasa, etc.
-    val movieList: List<MovieItem>
-) : Serializable

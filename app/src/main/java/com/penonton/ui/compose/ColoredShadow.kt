@@ -1,6 +1,5 @@
 package com.penonton.ui.compose
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BlurMaskFilter
 import android.graphics.drawable.BitmapDrawable

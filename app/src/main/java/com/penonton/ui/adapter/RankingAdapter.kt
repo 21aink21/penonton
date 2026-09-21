@@ -1,5 +1,6 @@
 package com.penonton.ui.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
@@ -17,6 +18,7 @@ class RankingAdapter(
     private val items = mutableListOf<MovieItem>()
 
     
+    @SuppressLint("NotifyDataSetChanged")
     fun submitList(newItems: List<MovieItem>) {
         items.clear()
         items.addAll(newItems)
@@ -54,7 +56,7 @@ class RankingAdapter(
                 item.year.takeIf { it.isNotEmpty() },
                 item.rating.takeIf { it.isNotEmpty() }?.let { "★ $it" }
             ).joinToString(" • ")
-            binding.tvRankEp.text = if (info.isNotEmpty()) info else "Popular"
+            binding.tvRankEp.text = info.ifEmpty { "Popular" }
 
             val context = binding.root.context
             when (rank) {
