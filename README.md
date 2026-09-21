@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/21aink21/LK21/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" height="96" alt="LK21 Logo" />
   <br>
-  <b>Aplikasi Streaming Film LK21 & Serial NontonDrama Cepat, Ringan, dan Sinematik untuk Android</b>
+  <b>Aplikasi Streaming Film & Serial Drama Cepat, Ringan, dan Sinematik untuk Android</b>
   <br><br>
   <a href="https://github.com/21aink21/LK21/releases/latest">
     <img src="https://img.shields.io/badge/Release-v1.0.0-crimson.svg" alt="Latest Release" />
