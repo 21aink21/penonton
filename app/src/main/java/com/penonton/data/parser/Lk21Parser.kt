@@ -311,9 +311,45 @@ object Lk21Parser {
             ?: doc.selectFirst("picture img")?.attr("src")
             ?: ""
 
-        val synopsis = doc.selectFirst("blockquote")?.text()?.ifEmpty { null }
-            ?: doc.selectFirst("meta[name=description]")?.attr("content")
-            ?: doc.selectFirst("div.content p")?.text()
+        val synopsisCandidates = mutableListOf<String>()
+        // 1. Blockquote
+        doc.select("blockquote").forEach {
+            val text = it.text().trim()
+            if (text.isNotEmpty()) {
+                synopsisCandidates.add(text)
+            }
+        }
+        // 2. Elemen yang kemungkinan merupakan synopsis
+        doc.select(
+            ".synopsis, .description, .storyline, " +
+                    ".film-description, .movie-description, " +
+                    "[class*=synopsis], [class*=description]"
+        ).forEach {
+            val text = it.text().trim()
+            if (text.isNotEmpty()) {
+                synopsisCandidates.add(text)
+            }
+        }
+        // 3. Paragraph dalam content
+        doc.select("div.content p").forEach {
+            val text = it.text().trim()
+            if (
+                text.length >= 80 &&
+                !text.startsWith("Streaming", ignoreCase = true) &&
+                !text.contains("subtitle indonesia", ignoreCase = true) &&
+                !text.contains("kualitas HD", ignoreCase = true) &&
+                !text.contains("Saksikan di", ignoreCase = true)
+            ) {
+                synopsisCandidates.add(text)
+            }
+        }
+        // 4. Fallback terakhir: meta description
+        val synopsis = synopsisCandidates
+            .distinct()
+            .maxByOrNull { it.length }
+            ?: doc.selectFirst("meta[name=description]")
+                ?.attr("content")
+                ?.trim()
             ?: ""
 
         val meta = mutableMapOf<String, String>()
