@@ -1,7 +1,7 @@
 <!-- res/values/strings.xml -->
 <resources>
     <string name="app_name">Penonton</string>
-    <string name="search_hint">Cari film atau serial drama...</string>
+    <string name="search_hint">Cari film atau serial drama…</string>
     <string name="latest_updates">Film &amp; Series Terbaru</string>
     <string name="search_results">Hasil Pencarian</string>
     <string name="episodes">Pilihan Season &amp; Episode</string>
@@ -10,4 +10,14 @@
     <string name="no_data">Tidak ada film atau serial ditemukan</string>
     <string name="error_loading">Gagal memuat data, silakan coba lagi</string>
     <string name="play_now">Tonton Sekarang</string>
+    <string name="_00_00">00:00</string>
+    <string name="maju">Maju</string>
+    <string name="putar_jeda">Putar / Jeda</string>
+    <string name="mundur">Mundur</string>
+    <string name="player_rewind_description">Rewind 10s</string>
+    <string name="player_play_pause_description">Play/Pause</string>
+    <string name="player_forward_description">Forward 10s</string>
+    <string name="rewind_10s">Rewind 10s</string>
+    <string name="play_pause">Play/Pause</string>
+    <string name="forward_10s">Forward 10s</string>
 </resources>

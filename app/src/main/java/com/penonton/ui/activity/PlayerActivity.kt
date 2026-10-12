@@ -1,8 +1,10 @@
 package com.penonton.ui.activity
 
 import android.annotation.SuppressLint
+import android.app.Dialog
 import android.app.PictureInPictureParams
 import android.content.res.Configuration
+import android.graphics.Color
 import android.graphics.Rect
 import android.media.AudioManager
 import android.os.Build
@@ -11,11 +13,13 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Rational
 import android.view.GestureDetector
+import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -23,18 +27,27 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.ImageButton
+import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.Keep
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -76,12 +89,34 @@ class PlayerActivity : AppCompatActivity() {
     private val speedList = floatArrayOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
     private var currentSpeedIdx = 2
 
+    // Quality selection variable
+    private var selectedQualityLabel = "Auto"
+
+    // Helper References ke view dalam exo_player_control_view
+    private val btnPlayerBack: ImageButton? get() = binding.playerView.findViewById(R.id.btnPlayerBack)
+    private val tvPlayerTitle: TextView? get() = binding.playerView.findViewById(R.id.tvPlayerTitle)
+    private val btnPlayerSettings: ImageButton? get() = binding.playerView.findViewById(R.id.btnPlayerSettings)
+    private val btnRewind: ImageButton? get() = binding.playerView.findViewById(R.id.btnRewind)
+    private val btnPlayPause: ImageButton? get() = binding.playerView.findViewById(R.id.btnPlayPause)
+    private val btnForward: ImageButton? get() = binding.playerView.findViewById(R.id.btnForward)
+    private val playerHeader: View? get() = binding.playerView.findViewById(R.id.playerHeader)
+    private val bottomControls: View? get() =
+        binding.playerView.findViewById(R.id.layoutBottomControls)
+
+
     // Smooth Gesture control variables
     private lateinit var audioManager: AudioManager
     private var maxVolume = 15
     private var initialVolume = 0
     private var initialBrightness = 0.5f
     private var touchSlop = 0
+
+    private var playerHeaderBasePaddingTop = 0
+    private var playerHeaderBasePaddingStart = 0
+    private var playerHeaderBasePaddingEnd = 0
+    private var bottomControlsBasePaddingBottom = 0
+    private var unlockBaseTopMargin = 0
+
 
     private var initialTouchX = 0f
     private var initialTouchY = 0f
@@ -117,6 +152,76 @@ class PlayerActivity : AppCompatActivity() {
     private val hudHandler = Handler(Looper.getMainLooper())
     private val hideHudRunnable = Runnable { binding.layoutHud.isVisible = false }
 
+    // Posisi pill HUD mengikuti jenis gestur. Hanya satu update posisi per frame.
+    private enum class HudPosition {
+        CENTER, LEFT, RIGHT, FINGER_LEFT, FINGER_RIGHT, TOP_CENTER
+    }
+
+    private var hudPosition = HudPosition.CENTER
+    private var hudFingerRawY = 0f
+    private var hudPositionScheduled = false
+
+    private fun scheduleHudPosition(
+        position: HudPosition,
+        fingerRawY: Float? = null
+    ) {
+        hudPosition = position
+        if (fingerRawY != null) hudFingerRawY = fingerRawY
+        if (hudPositionScheduled) return
+        hudPositionScheduled = true
+
+        binding.layoutHud.post {
+            hudPositionScheduled = false
+            if (!binding.layoutHud.isVisible) return@post
+            val hud = binding.layoutHud
+            val root = binding.playerRoot
+            val density = resources.displayMetrics.density
+            val horizontalMargin = 20f * density
+            val verticalMargin = 16f * density
+
+            // layoutHud di XML di-constraint ke tengah root.
+            val centerX = (root.width - hud.width) / 2f
+            val centerY = (root.height - hud.height) / 2f
+            val endX = (root.width - hud.width - horizontalMargin)
+                .coerceAtLeast(horizontalMargin)
+            val x = when (hudPosition) {
+                HudPosition.LEFT,
+                HudPosition.FINGER_LEFT -> horizontalMargin
+
+                HudPosition.RIGHT,
+                HudPosition.FINGER_RIGHT -> endX
+
+                else -> centerX
+            }.coerceIn(
+                0f,
+                (root.width - hud.width).toFloat().coerceAtLeast(0f)
+            )
+
+            val rootLocation = IntArray(2)
+            root.getLocationOnScreen(rootLocation)
+            val topInset = ViewCompat.getRootWindowInsets(root)
+                ?.getInsets(
+                    WindowInsetsCompat.Type.statusBars() or
+                        WindowInsetsCompat.Type.displayCutout()
+                )?.top ?: 0
+            val targetY = when (hudPosition) {
+                HudPosition.FINGER_LEFT,
+                HudPosition.FINGER_RIGHT ->
+                    hudFingerRawY - rootLocation[1] - hud.height / 2f
+
+                HudPosition.TOP_CENTER -> topInset + verticalMargin
+
+                else -> centerY
+            }.coerceIn(
+                0f,
+                (root.height - hud.height).toFloat().coerceAtLeast(0f)
+            )
+
+            hud.translationX = x - centerX
+            hud.translationY = targetY - centerY
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -124,10 +229,14 @@ class PlayerActivity : AppCompatActivity() {
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // System UI insets untuk header, tombol unlock, dan kontrol bawah.
+        applyPlayerWindowInsets()
+
         storage = StorageManager.getInstance(this)
         audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
         maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        touchSlop = ViewConfiguration.get(this).scaledTouchSlop
+        touchSlop = (ViewConfiguration.get(this).scaledTouchSlop * 2)
+            .coerceAtLeast((16 * resources.displayMetrics.density).toInt())
 
         movieId = intent.getIntExtra("MEDIA_ID", 0)
         animeTitle = intent.getStringExtra("MEDIA_TITLE") ?: ""
@@ -147,79 +256,102 @@ class PlayerActivity : AppCompatActivity() {
                 ?: 0L
         }
 
-        binding.tvPlayerTitle.text = "$animeTitle - $episodeName"
-        binding.btnPlayerBack.setOnClickListener { finish() }
+        tvPlayerTitle?.text = if (episodeName.isNotEmpty()) "$animeTitle - $episodeName" else animeTitle
+        btnPlayerBack?.setOnClickListener { finish() }
 
         setupPlayerControls()
         setupGestures()
         loadStream()
     }
 
-    private fun setupPlayerControls() {
-        binding.playerView.controllerShowTimeoutMs = 7000
 
-        // Memperbaiki overload resolution ambiguity & type inference error
+    /**
+     * Menjaga overlay player agar tidak tertutup status bar, display cutout,
+     * maupun navigation bar. Insets diterapkan hanya sebagai tambahan
+     * terhadap padding/margin desain asli.
+     */
+    private fun applyPlayerWindowInsets() {
+        val root = binding.playerRoot
+        val header = playerHeader
+        val bottom = bottomControls
+        val unlock = binding.btnUnlock
+
+        playerHeaderBasePaddingTop = header?.paddingTop ?: 0
+        playerHeaderBasePaddingStart = header?.paddingStart ?: 0
+        playerHeaderBasePaddingEnd = header?.paddingEnd ?: 0
+        bottomControlsBasePaddingBottom = bottom?.paddingBottom ?: 0
+
+        val unlockParams = unlock.layoutParams as? ViewGroup.MarginLayoutParams
+        unlockBaseTopMargin = unlockParams?.topMargin ?: 0
+
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val systemInsets = insets.getInsets(
+                WindowInsetsCompat.Type.statusBars() or
+                        WindowInsetsCompat.Type.displayCutout()
+            )
+            val navigationInsets = insets.getInsets(
+                WindowInsetsCompat.Type.navigationBars()
+            )
+
+            header?.updatePadding(
+                left = playerHeaderBasePaddingStart + systemInsets.left,
+                top = playerHeaderBasePaddingTop + systemInsets.top,
+                right = playerHeaderBasePaddingEnd + systemInsets.right
+            )
+
+            bottom?.updatePadding(
+                bottom = bottomControlsBasePaddingBottom + navigationInsets.bottom
+            )
+
+            val lp = unlock.layoutParams as? ViewGroup.MarginLayoutParams
+            if (lp != null) {
+                lp.topMargin = unlockBaseTopMargin + systemInsets.top
+                unlock.layoutParams = lp
+            }
+
+            insets
+        }
+
+        ViewCompat.requestApplyInsets(root)
+    }
+
+    private fun setupPlayerControls() {
+        binding.playerView.controllerShowTimeoutMs = 15000
+
+        // Listener visibilitas kontrol PlayerView
         binding.playerView.setControllerVisibilityListener(PlayerView.ControllerVisibilityListener { visibility ->
             isControlsVisible = (visibility == View.VISIBLE)
-            if (isScreenLocked) return@ControllerVisibilityListener
-            if (visibility == View.VISIBLE) {
-                binding.playerHeader.animate().cancel()
-                binding.playerHeader.isVisible = true
-                binding.playerHeader.animate()
-                    .alpha(1f)
-                    .translationY(0f)
-                    .setDuration(250)
-                    .start()
-            } else {
-                binding.playerHeader.animate().cancel()
-                binding.playerHeader.animate()
-                    .alpha(0f)
-                    .translationY(-binding.playerHeader.height.toFloat().coerceAtLeast(60f))
-                    .setDuration(250)
-                    .withEndAction {
-                        binding.playerHeader.isVisible = false
-                    }
-                    .start()
-            }
         })
 
-        binding.btnAspectRatio.setOnClickListener {
-            currentAspectRatioIdx = (currentAspectRatioIdx + 1) % aspectRatios.size
-            val (mode, label) = aspectRatios[currentAspectRatioIdx]
-            currentScaleFactor = 1.0f
-            binding.playerView.scaleX = 1.0f
-            binding.playerView.scaleY = 1.0f
-            binding.playerView.resizeMode = mode
-            showHud(R.drawable.ic_aspect_ratio, label)
+        // --- KLIK KONTROL TENGAH & HEADER ---
+        btnRewind?.setOnClickListener {
+            exoPlayer?.let { player ->
+                val targetPosition = (player.currentPosition - 10_000).coerceAtLeast(0L)
+                player.seekTo(targetPosition)
+                showHud(R.drawable.ic_rewind_10, "-10 Detik")
+            }
         }
 
-        binding.btnSpeed.setOnClickListener {
-            val speedNames = speedList.map { "${it}x" }.toTypedArray()
-            AlertDialog.Builder(this)
-                .setTitle("Pilih Kecepatan Putar")
-                .setSingleChoiceItems(speedNames, currentSpeedIdx) { dialog, which ->
-                    currentSpeedIdx = which
-                    val selectedSpeed = speedList[which]
-                    previousPlaybackSpeed = selectedSpeed
-                    exoPlayer?.playbackParameters = PlaybackParameters(selectedSpeed)
-                    binding.btnSpeed.text = "${selectedSpeed}x"
-                    dialog.dismiss()
+        btnForward?.setOnClickListener {
+            exoPlayer?.let { player ->
+                val targetPosition = (player.currentPosition + 10_000).coerceAtMost(player.duration)
+                player.seekTo(targetPosition)
+                showHud(R.drawable.ic_forward_10, "+10 Detik")
+            }
+        }
+
+        btnPlayPause?.setOnClickListener {
+            exoPlayer?.let { player ->
+                if (player.isPlaying) {
+                    player.pause()
+                } else {
+                    player.play()
                 }
-                .show()
+            }
         }
 
-        binding.btnPip.setOnClickListener {
-            enterPipMode()
-        }
-
-        binding.btnLock.setOnClickListener {
-            isScreenLocked = true
-            isControlsVisible = false
-            binding.playerHeader.isVisible = false
-            binding.playerView.hideController()
-            binding.playerView.useController = false
-            binding.btnUnlock.isVisible = true
-            showHud(R.drawable.ic_lock, "Layar Terkunci")
+        btnPlayerSettings?.setOnClickListener {
+            showPlayerSettings()
         }
 
         binding.btnUnlock.setOnClickListener {
@@ -228,8 +360,197 @@ class PlayerActivity : AppCompatActivity() {
             binding.playerView.useController = true
             binding.playerView.showController()
             binding.btnUnlock.isVisible = false
+
             showHud(R.drawable.ic_lock_open, "Layar Terbuka")
         }
+    }
+
+    private fun showPlayerSettings() {
+        val dialog = Dialog(this)
+        val dialogBinding = com.penonton.databinding.DialogPlayerSettingsBinding.inflate(layoutInflater)
+
+        dialogBinding.tvSettingsTitle.text = getString(R.string.player_settings_title)
+
+        dialogBinding.tvSettingQuality.text = getString(
+            R.string.player_setting_quality_value,
+            selectedQualityLabel
+        )
+
+        dialogBinding.tvSettingAspect.text = getString(
+            R.string.player_setting_aspect_value,
+            aspectRatios[currentAspectRatioIdx].second
+        )
+
+        val speedText = speedList[currentSpeedIdx].toString()
+        dialogBinding.tvSettingSpeed.text = getString(
+            R.string.player_setting_speed_value,
+            speedText
+        )
+
+        dialogBinding.tvSettingPip.text = getString(R.string.player_setting_pip)
+
+        dialogBinding.tvSettingLock.text = if (isScreenLocked) {
+            getString(R.string.player_setting_unlock)
+        } else {
+            getString(R.string.player_setting_lock)
+        }
+
+        dialogBinding.tvSettingQuality.setOnClickListener {
+            dialog.dismiss()
+            showQualitySelectorDialog()
+        }
+
+        dialogBinding.tvSettingAspect.setOnClickListener {
+            currentAspectRatioIdx = (currentAspectRatioIdx + 1) % aspectRatios.size
+            val (mode, label) = aspectRatios[currentAspectRatioIdx]
+
+            currentScaleFactor = 1.0f
+            binding.playerView.scaleX = 1.0f
+            binding.playerView.scaleY = 1.0f
+            binding.playerView.resizeMode = mode
+
+            showHud(R.drawable.ic_aspect_ratio, label)
+            dialog.dismiss()
+        }
+
+        dialogBinding.tvSettingSpeed.setOnClickListener {
+            dialog.dismiss()
+            val speedNames = speedList.map { "${it}x" }.toTypedArray()
+
+            AlertDialog.Builder(this)
+                .setTitle(getString(R.string.player_speed_title))
+                .setSingleChoiceItems(speedNames, currentSpeedIdx) { speedDialog, speedIndex ->
+                    currentSpeedIdx = speedIndex
+                    val selectedSpeed = speedList[speedIndex]
+
+                    previousPlaybackSpeed = selectedSpeed
+                    exoPlayer?.playbackParameters = PlaybackParameters(selectedSpeed)
+
+                    showHud(R.drawable.ic_speed, "Kecepatan: ${selectedSpeed}x")
+                    speedDialog.dismiss()
+                }
+                .show()
+        }
+
+        dialogBinding.tvSettingPip.setOnClickListener {
+            dialog.dismiss()
+            enterPipMode()
+        }
+
+        dialogBinding.tvSettingLock.setOnClickListener {
+            dialog.dismiss()
+
+            if (isScreenLocked) {
+                binding.btnUnlock.performClick()
+            } else {
+                isScreenLocked = true
+                isControlsVisible = false
+                binding.playerView.hideController()
+                binding.playerView.useController = false
+                binding.btnUnlock.isVisible = true
+                showHud(R.drawable.ic_lock, "Layar Terkunci")
+            }
+        }
+
+        dialog.setContentView(dialogBinding.root)
+        dialog.window?.apply {
+            setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+            setDimAmount(0.15f)
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+
+            setLayout(
+                (300 * resources.displayMetrics.density).toInt(),
+                WindowManager.LayoutParams.WRAP_CONTENT
+            )
+            attributes = attributes.apply {
+                gravity = Gravity.TOP or Gravity.END
+                y = (64 * resources.displayMetrics.density).toInt()
+                x = (12 * resources.displayMetrics.density).toInt()
+            }
+        }
+
+        dialog.show()
+    }
+
+    private data class VideoQualityOption(
+        val label: String,
+        val height: Int,
+        val group: Tracks.Group,
+        val trackIndex: Int
+    )
+
+    private fun showQualitySelectorDialog() {
+        val player = exoPlayer
+        if (player == null || binding.webViewPlayer.isVisible) {
+            Toast.makeText(this, "Pengaturan kualitas tidak tersedia untuk mode Web Embed", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val availableQualities = mutableListOf<VideoQualityOption>()
+        val currentTracks = player.currentTracks
+
+        for (group in currentTracks.groups) {
+            if (group.type == C.TRACK_TYPE_VIDEO) {
+                for (i in 0 until group.length) {
+                    val format = group.getTrackFormat(i)
+                    if (format.height != androidx.media3.common.Format.NO_VALUE && format.height > 0) {
+                        val label = "${format.height}p"
+                        availableQualities.add(
+                            VideoQualityOption(
+                                label = label,
+                                height = format.height,
+                                group = group,
+                                trackIndex = i
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+        if (availableQualities.isEmpty()) {
+            Toast.makeText(this, "Hanya ada 1 pilihan kualitas untuk video ini", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        availableQualities.sortByDescending { it.height }
+
+        val qualityLabels = mutableListOf(getString(R.string.player_quality_auto))
+        qualityLabels.addAll(availableQualities.map { it.label })
+
+        val currentSelectedIndex = if (selectedQualityLabel == "Auto") {
+            0
+        } else {
+            availableQualities.indexOfFirst { it.label == selectedQualityLabel }.takeIf { it != -1 }?.plus(1) ?: 0
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.player_quality_title))
+            .setSingleChoiceItems(qualityLabels.toTypedArray(), currentSelectedIndex) { qualityDialog, index ->
+                if (index == 0) {
+                    selectedQualityLabel = "Auto"
+                    player.trackSelectionParameters = player.trackSelectionParameters
+                        .buildUpon()
+                        .clearOverridesOfType(C.TRACK_TYPE_VIDEO)
+                        .build()
+                    showHud(R.drawable.ic_settings, "Kualitas: Auto")
+                } else {
+                    val selectedOption = availableQualities[index - 1]
+                    selectedQualityLabel = selectedOption.label
+                    player.trackSelectionParameters = player.trackSelectionParameters
+                        .buildUpon()
+                        .setOverrideForType(
+                            TrackSelectionOverride(
+                                selectedOption.group.mediaTrackGroup,
+                                selectedOption.trackIndex
+                            )
+                        )
+                        .build()
+                    showHud(R.drawable.ic_settings, "Kualitas: ${selectedOption.label}")
+                }
+                qualityDialog.dismiss()
+            }
+            .show()
     }
 
     private fun enterPipMode() {
@@ -259,26 +580,18 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun handlePipChange(isInPip: Boolean) {
         if (isInPip) {
-            binding.playerHeader.isVisible = false
             binding.playerView.useController = false
+            binding.playerView.hideController()
         } else {
-            binding.playerHeader.isVisible = !isScreenLocked
             binding.playerView.useController = !isScreenLocked
+            if (!isScreenLocked) {
+                binding.playerView.showController()
+            }
         }
     }
 
     private fun setupGestures() {
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                if (isScreenLocked) return false
-                if (isControlsVisible) {
-                    binding.playerView.hideController()
-                } else {
-                    binding.playerView.showController()
-                }
-                return true
-            }
-
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 if (isScreenLocked) return false
                 val screenWidth = binding.playerRoot.width.toFloat().coerceAtLeast(1f)
@@ -286,13 +599,13 @@ class PlayerActivity : AppCompatActivity() {
                     exoPlayer?.let {
                         val newPos = (it.currentPosition - 10000).coerceAtLeast(0)
                         it.seekTo(newPos)
-                        showHud(R.drawable.ic_skip_previous, "-10s")
+                        showHud(R.drawable.ic_skip_previous, "-10s", position = HudPosition.LEFT)
                     }
                 } else {
                     exoPlayer?.let {
                         val newPos = (it.currentPosition + 10000).coerceAtMost(it.duration)
                         it.seekTo(newPos)
-                        showHud(R.drawable.ic_skip_next, "+10s")
+                        showHud(R.drawable.ic_skip_next, "+10s", position = HudPosition.RIGHT)
                     }
                 }
                 return true
@@ -306,7 +619,7 @@ class PlayerActivity : AppCompatActivity() {
                         previousPlaybackSpeed = player.playbackParameters.speed
                         player.playbackParameters = PlaybackParameters(2.0f)
                         binding.playerRoot.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                        showHud(R.drawable.ic_speed, "2X Speed ⏩\n(Tahan Layar)", autoHide = false)
+                        showHud(R.drawable.ic_speed, "2.0×", autoHide = false, position = HudPosition.TOP_CENTER)
                     }
                 }
             }
@@ -338,7 +651,7 @@ class PlayerActivity : AppCompatActivity() {
             override fun onScaleEnd(detector: ScaleGestureDetector) {
                 isScaling = false
                 hudHandler.removeCallbacks(hideHudRunnable)
-                hudHandler.postDelayed(hideHudRunnable, 1000)
+                hudHandler.postDelayed(hideHudRunnable, 1800)
             }
         })
     }
@@ -356,11 +669,13 @@ class PlayerActivity : AppCompatActivity() {
             return true
         }
 
-        if (binding.playerHeader.isVisible) {
-            val headerRect = Rect()
-            binding.playerHeader.getGlobalVisibleRect(headerRect)
-            if (headerRect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
-                return super.dispatchTouchEvent(ev)
+        playerHeader?.let { header ->
+            if (header.isVisible) {
+                val headerRect = Rect()
+                header.getGlobalVisibleRect(headerRect)
+                if (headerRect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
+                    return super.dispatchTouchEvent(ev)
+                }
             }
         }
 
@@ -395,9 +710,9 @@ class PlayerActivity : AppCompatActivity() {
                     val deltaX = ev.rawX - initialTouchX
                     val deltaY = ev.rawY - initialTouchY
 
-                    if (!isVerticalSwipe && abs(deltaX) > touchSlop && abs(deltaX) > abs(deltaY) * 1.2f) {
+                    if (!isVerticalSwipe && abs(deltaX) > touchSlop && abs(deltaX) > abs(deltaY) * 1.5f) {
                         isHorizontalSwipe = true
-                        val seekDeltaMs = ((deltaX / screenWidth) * 90000).toLong()
+                        val seekDeltaMs = ((deltaX / screenWidth) * 60000).toLong()
                         targetSeekPositionMs = (initialPositionMs + seekDeltaMs).coerceIn(0L, videoDurationMs)
 
                         val diffSeconds = (targetSeekPositionMs - initialPositionMs) / 1000
@@ -405,24 +720,41 @@ class PlayerActivity : AppCompatActivity() {
                         val timeStr = "${formatTime(targetSeekPositionMs)} / ${formatTime(videoDurationMs)}"
                         val iconRes = if (diffSeconds >= 0) R.drawable.ic_skip_next else R.drawable.ic_skip_previous
 
-                        showHud(iconRes, "$sign\n[$timeStr]")
+                        showHud(
+                            iconRes,
+                            "$sign\n$timeStr",
+                            autoHide = false,
+                            position = if (deltaX >= 0f) HudPosition.RIGHT else HudPosition.LEFT
+                        )
                         return true
-                    } else if (!isHorizontalSwipe && abs(deltaY) > touchSlop && abs(deltaY) > abs(deltaX) * 1.2f) {
+                    } else if (!isHorizontalSwipe && abs(deltaY) > touchSlop && abs(deltaY) > abs(deltaX) * 1.5f) {
                         isVerticalSwipe = true
                         val deltaPercent = -deltaY / screenHeight
 
                         if (isLeftSwipe) {
                             val lp = window.attributes
-                            val newBrightness = (initialBrightness + deltaPercent * 1.2f).coerceIn(0.01f, 1.0f)
+                            val newBrightness = (initialBrightness + deltaPercent * 0.8f).coerceIn(0.01f, 1.0f)
                             lp.screenBrightness = newBrightness
                             window.attributes = lp
-                            showHud(R.drawable.ic_brightness, "Kecerahan: ${(newBrightness * 100).toInt()}%")
+                            showHud(
+                                R.drawable.ic_brightness,
+                                "${(newBrightness * 100).toInt()}%",
+                                autoHide = false,
+                                position = HudPosition.FINGER_LEFT,
+                                fingerRawY = ev.rawY
+                            )
                         } else {
-                            val volDelta = (deltaPercent * maxVolume * 1.2f).toInt()
+                            val volDelta = (deltaPercent * maxVolume * 0.8f).toInt()
                             val newVol = (initialVolume + volDelta).coerceIn(0, maxVolume)
                             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVol, 0)
                             val volPercent = ((newVol.toFloat() / maxVolume) * 100).toInt()
-                            showHud(R.drawable.ic_volume, "Volume: $volPercent%")
+                            showHud(
+                                R.drawable.ic_volume,
+                                "$volPercent%",
+                                autoHide = false,
+                                position = HudPosition.FINGER_RIGHT,
+                                fingerRawY = ev.rawY
+                            )
                         }
                         return true
                     }
@@ -433,13 +765,13 @@ class PlayerActivity : AppCompatActivity() {
                 if (isFastForwarding) {
                     exoPlayer?.playbackParameters = PlaybackParameters(previousPlaybackSpeed)
                     isFastForwarding = false
-                    showHud(R.drawable.ic_speed, "${previousPlaybackSpeed}x Normal", autoHide = true)
+                    showHud(R.drawable.ic_speed, "${previousPlaybackSpeed}×", autoHide = true, position = HudPosition.TOP_CENTER)
                 }
 
                 if (isHorizontalSwipe) {
                     exoPlayer?.seekTo(targetSeekPositionMs)
                     hudHandler.removeCallbacks(hideHudRunnable)
-                    hudHandler.postDelayed(hideHudRunnable, 600)
+                    hudHandler.postDelayed(hideHudRunnable, 1800)
                     isHorizontalSwipe = false
                     return true
                 }
@@ -447,7 +779,7 @@ class PlayerActivity : AppCompatActivity() {
                 if (isVerticalSwipe) {
                     isVerticalSwipe = false
                     hudHandler.removeCallbacks(hideHudRunnable)
-                    hudHandler.postDelayed(hideHudRunnable, 600)
+                    hudHandler.postDelayed(hideHudRunnable, 1800)
                     return true
                 }
             }
@@ -464,14 +796,23 @@ class PlayerActivity : AppCompatActivity() {
         return "%02d:%02d".format(minutes, seconds)
     }
 
-    private fun showHud(iconRes: Int, text: String, autoHide: Boolean = true) {
+    private fun showHud(
+        iconRes: Int,
+        text: String,
+        autoHide: Boolean = true,
+        position: HudPosition = HudPosition.CENTER,
+        fingerRawY: Float? = null
+    ) {
         binding.ivHudIcon.setImageResource(iconRes)
-        binding.tvHudText.text = text
+        if (binding.tvHudText.text.toString() != text) {
+            binding.tvHudText.text = text
+        }
         binding.layoutHud.isVisible = true
+        scheduleHudPosition(position, fingerRawY)
 
         hudHandler.removeCallbacks(hideHudRunnable)
         if (autoHide) {
-            hudHandler.postDelayed(hideHudRunnable, 1200)
+            hudHandler.postDelayed(hideHudRunnable, 1800L)
         }
     }
 
@@ -567,18 +908,19 @@ class PlayerActivity : AppCompatActivity() {
                                 }
                                 val mins = targetPos / 60000
                                 val secs = (targetPos % 60000) / 1000
-                                showHud(R.drawable.ic_skip_next, "Melanjutkan dari %02d:%02d".format(mins, secs))
+                                showHud(R.drawable.ic_skip_next, "%02d:%02d".format(mins, secs))
                             }
                         }
                         Player.STATE_ENDED -> {
                             binding.playerProgressBar.isVisible = false
-                            Toast.makeText(this@PlayerActivity, "Episode selesai", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PlayerActivity, "The End", Toast.LENGTH_SHORT).show()
                         }
                         else -> {}
                     }
                 }
 
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    btnPlayPause?.setImageResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play)
                     if (isPlaying) {
                         startProgressSaver()
                     } else {
@@ -615,7 +957,6 @@ class PlayerActivity : AppCompatActivity() {
         binding.webViewPlayer.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
-            databaseEnabled = true
             allowFileAccess = false
             allowContentAccess = false
             mediaPlaybackRequiresUserGesture = false

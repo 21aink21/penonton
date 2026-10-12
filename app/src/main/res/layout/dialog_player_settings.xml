@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/playerSettingsRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true"
+    android:background="@android:color/transparent"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="20dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:id="@+id/tvSettingsTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/player_settings_title"
+        android:textColor="@color/text_primary"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:paddingBottom="8dp"
+        tools:ignore="VisualLintSystemUi" />
+
+    <TextView
+        android:id="@+id/tvSettingQuality"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="@android:color/transparent"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="@string/player_setting_quality" />
+
+    <TextView
+        android:id="@+id/tvSettingAspect"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="@android:color/transparent"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="@string/player_setting_aspect" />
+
+    <TextView
+        android:id="@+id/tvSettingSpeed"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="@android:color/transparent"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="@string/player_setting_speed" />
+
+    <TextView
+        android:id="@+id/tvSettingPip"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="@android:color/transparent"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="@string/player_setting_pip" />
+
+    <TextView
+        android:id="@+id/tvSettingLock"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="@android:color/transparent"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="@string/player_setting_lock" />
+
+</LinearLayout>

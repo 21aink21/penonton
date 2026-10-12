@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_time_separator">/</string>
+    <string name="player_rewind">Mundur 10 detik</string>
+    <string name="player_play_pause">Putar atau jeda</string>
+    <string name="player_fast_forward">Maju 10 detik</string>
+
+    <string name="player_back_description">Kembali</string>
+    <string name="player_settings_description">Pengaturan player</string>
+    <string name="player_unlock_description">Buka kunci layar</string>
+    <string name="player_hud_icon_description">Informasi kontrol player</string>
+
+    <string name="player_settings_title">Pengaturan Player</string>
+    <string name="player_setting_aspect">Tampilan</string>
+    <string name="player_setting_speed">Kecepatan</string>
+    <string name="player_setting_pip">Picture-in-Picture</string>
+    <string name="player_setting_lock">Kunci Layar</string>
+    <string name="player_setting_unlock">Buka Kunci Layar</string>
+    <string name="player_speed_title">Pilih Kecepatan Putar</string>
+
+    <string name="player_setting_aspect_value">Tampilan (%1$s)</string>
+    <string name="player_setting_speed_value">Kecepatan (%1$sx)</string>
+
+    <string name="player_setting_quality">Kualitas Video</string>
+    <string name="player_setting_quality_value">Kualitas (%1$s)</string>
+    <string name="player_quality_title">Pilih Kualitas Video</string>
+    <string name="player_quality_auto">Otomatis (Auto)</string>
+</resources>
