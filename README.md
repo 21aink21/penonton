@@ -6,7 +6,7 @@
   <b>Aplikasi Streaming Film & Serial Drama Cepat, Ringan, dan Sinematik untuk Android</b>
   <br><br>
   <a href="https://github.com/21aink21/penonton/releases/latest">
-    <img src="https://img.shields.io/badge/Release-v1.0.3-crimson.svg" alt="Latest Release" />
+    <img src="https://img.shields.io/badge/Release-v1.0.4-crimson.svg" alt="Latest Release" />
   </a>
   <img src="https://img.shields.io/badge/Android-7.0%2B-green.svg" alt="Android Support" />
   <img src="https://img.shields.io/badge/Kotlin-2.0-blue.svg" alt="Kotlin" />
