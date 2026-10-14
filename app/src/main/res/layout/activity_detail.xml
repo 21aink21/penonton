@@ -70,6 +70,7 @@
                     android:id="@+id/ivBackdrop"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:adjustViewBounds="true"
                     android:scaleType="centerCrop" />
 
                 <!-- Gradient Atas (Top Scrim) -->
@@ -104,17 +105,18 @@
 
                 <!-- Navigasi Atas (Top-Left: inset-top 42dp, inset-left 16dp) -->
                 <FrameLayout
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_gravity="top|start"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="42dp">
 
                     <ImageButton
                         android:id="@+id/btnBack"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
                         android:background="@drawable/bg_back_floating"
+                        android:contentDescription="@string/back"
                         android:src="@drawable/ic_back"
                         app:tint="#FFFFFF" />
                 </FrameLayout>

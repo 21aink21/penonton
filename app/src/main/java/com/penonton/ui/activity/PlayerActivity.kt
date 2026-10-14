@@ -741,7 +741,7 @@ class PlayerActivity : AppCompatActivity() {
                                 "${(newBrightness * 100).toInt()}%",
                                 autoHide = false,
                                 position = HudPosition.FINGER_LEFT,
-                                fingerRawY = ev.rawY
+                                //fingerRawY = ev.rawY
                             )
                         } else {
                             val volDelta = (deltaPercent * maxVolume * 0.8f).toInt()
@@ -753,7 +753,7 @@ class PlayerActivity : AppCompatActivity() {
                                 "$volPercent%",
                                 autoHide = false,
                                 position = HudPosition.FINGER_RIGHT,
-                                fingerRawY = ev.rawY
+                                //fingerRawY = ev.rawY
                             )
                         }
                         return true

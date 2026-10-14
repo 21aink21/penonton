@@ -37,7 +37,6 @@ class DetailActivity : AppCompatActivity() {
 
         private const val TAG = "DetailActivity"
 
-        private const val TMDB_DEBUG_TAG = "TMDB_DEBUG"
         private const val SYNOPSIS_DEBUG_TAG = "SYNOPSIS_DEBUG"
 
         const val EXTRA_MEDIA_ID = "MEDIA_ID"
@@ -177,13 +176,9 @@ class DetailActivity : AppCompatActivity() {
         }
 
         /*
-         * MovieDetail belum memiliki backdrop.
+         * MovieDetail belum memiliki backdrop khusus.
          *
-         * Karena itu poster digunakan sebagai background
-         * sementara.
-         *
-         * Jika TMDb mempunyai backdrop, observer TMDb
-         * akan menggantinya.
+         * Karena itu poster digunakan sebagai background hero.
          */
         if (initialPoster.isNotBlank()) {
 
@@ -721,7 +716,6 @@ class DetailActivity : AppCompatActivity() {
      * - teks tanpa newline
      * - teks dengan newline
      * - synopsis hasil scraper
-     * - synopsis TMDb
      */
     private fun updateSynopsisToggleVisibility() {
 
@@ -1209,111 +1203,6 @@ class DetailActivity : AppCompatActivity() {
             bindDetail(
                 detail
             )
-
-            /*
-             * TMDb hanya metadata tambahan/fallback.
-             */
-            val title =
-                detail.title.trim()
-
-            if (title.isNotBlank()) {
-
-                viewModel.fetchExternalMetadata(
-                    title
-                )
-            }
-        }
-
-        // ========================================================
-        // TMDb
-        // ========================================================
-
-        viewModel.tmdbMetadata.observe(
-            this
-        ) { tmdb ->
-
-            if (tmdb == null) {
-                return@observe
-            }
-
-            Log.d(
-                TMDB_DEBUG_TAG,
-                "title=${tmdb.title ?: tmdb.name}, " +
-                        "overviewLen=${tmdb.overview.length}, " +
-                        "voteAverage=${tmdb.voteAverage}"
-            )
-
-            // ----------------------------------------------------
-            // Rating
-            // ----------------------------------------------------
-
-            val localRating =
-                getLocalRating()
-
-            if (
-                localRating.isBlank() &&
-                tmdb.voteAverage > 0
-            ) {
-
-                binding.tvRatingDetail.text =
-                    String.format(
-                        "%.1f",
-                        tmdb.voteAverage
-                    )
-
-                Log.d(
-                    TMDB_DEBUG_TAG,
-                    "Rating: menggunakan TMDb"
-                )
-            }
-
-            // ----------------------------------------------------
-            // Synopsis
-            // ----------------------------------------------------
-
-            val localSynopsis =
-                currentDetail
-                    ?.synopsis
-                    ?.trim()
-                    .orEmpty()
-
-            if (
-                localSynopsis.isBlank() &&
-                tmdb.overview.isNotBlank()
-            ) {
-
-                setSynopsis(
-                    tmdb.overview.trim()
-                )
-
-                Log.d(
-                    SYNOPSIS_DEBUG_TAG,
-                    "Synopsis: menggunakan TMDb"
-                )
-            }
-
-            // ----------------------------------------------------
-            // Backdrop
-            // ----------------------------------------------------
-
-            if (
-                !tmdb.backdropPath
-                    .isNullOrBlank()
-            ) {
-
-                val backdropUrl =
-                    "https://image.tmdb.org/t/p/w780" +
-                            tmdb.backdropPath
-
-                binding.ivBackdrop.loadPoster(
-                    backdropUrl
-                )
-
-                Log.d(
-                    TMDB_DEBUG_TAG,
-                    "Hero background: menggunakan TMDb backdrop"
-                )
-            }
         }
 
         // ========================================================
@@ -1439,10 +1328,7 @@ class DetailActivity : AppCompatActivity() {
         } else {
 
             /*
-             * Placeholder hanya visual.
-             *
-             * currentDetail tetap menyimpan synopsis kosong,
-             * sehingga TMDb masih bisa digunakan sebagai fallback.
+             * Placeholder hanya visual jika deskripsi kosong.
              */
             setSynopsis(
                 "Belum ada deskripsi tersedia."

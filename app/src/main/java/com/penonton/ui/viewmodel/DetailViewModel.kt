@@ -7,8 +7,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.penonton.data.model.MovieDetail
-import com.penonton.data.model.TmdbItem
-import com.penonton.data.network.ApiClient
 import com.penonton.data.parser.Lk21Parser
 import com.penonton.data.repository.TranslationRepository
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +19,6 @@ class DetailViewModel(
 
     companion object {
         private const val TAG = "DetailViewModel"
-        private const val TMDB_DEBUG_TAG = "TMDB_DEBUG"
     }
 
     private val _detail =
@@ -29,12 +26,6 @@ class DetailViewModel(
 
     val detail: LiveData<MovieDetail?> =
         _detail
-
-    private val _tmdbMetadata =
-        MutableLiveData<TmdbItem?>()
-
-    val tmdbMetadata: LiveData<TmdbItem?> =
-        _tmdbMetadata
 
     private val _isLoading =
         MutableLiveData<Boolean>()
@@ -47,9 +38,6 @@ class DetailViewModel(
 
     val error: LiveData<String?> =
         _error
-
-    private val tmdbApiKey =
-        "8e9f7ba399e95b2d3b7b8d3ba6bc9de1"
 
     private val translationRepository =
         TranslationRepository(
@@ -170,116 +158,6 @@ class DetailViewModel(
             } finally {
 
                 _isLoading.value = false
-            }
-        }
-    }
-
-    /**
-     * Mengambil metadata tambahan dari TMDb.
-     */
-    fun fetchExternalMetadata(
-        rawTitle: String
-    ) {
-
-        /*
-         * Hapus metadata film sebelumnya agar tidak tertukar
-         * dengan film yang sedang dibuka.
-         */
-        _tmdbMetadata.value = null
-
-        viewModelScope.launch(
-            Dispatchers.IO
-        ) {
-
-            try {
-
-                val cleanTitle =
-                    rawTitle
-                        .replace(
-                            Regex(
-                                "(?i)(sub indo|season \\d+|batch|movie|hd|complete|\\[.*?]|\\(\\d{4}\\))"
-                            ),
-                            ""
-                        )
-                        .replace(
-                            Regex("\\s+"),
-                            " "
-                        )
-                        .trim()
-
-                if (cleanTitle.isBlank()) {
-
-                    Log.d(
-                        TMDB_DEBUG_TAG,
-                        "Judul kosong, TMDb dilewati"
-                    )
-
-                    _tmdbMetadata.postValue(
-                        null
-                    )
-
-                    return@launch
-                }
-
-                val response =
-                    ApiClient
-                        .tmdbService
-                        .searchMedia(
-                            tmdbApiKey,
-                            cleanTitle
-                        )
-
-                /*
-                 * Buang hasil berupa person.
-                 *
-                 * Tetap mempertahankan perilaku kode lama:
-                 * hanya menerima judul yang benar-benar cocok.
-                 */
-                val bestMatch =
-                    response.results
-                        .filter {
-                            it.mediaType != "person"
-                        }
-                        .firstOrNull { item ->
-
-                            val candidate =
-                                (
-                                        item.title
-                                            ?: item.name
-                                            ?: ""
-                                        ).trim()
-
-                            candidate.equals(
-                                cleanTitle,
-                                ignoreCase = true
-                            )
-                        }
-
-                Log.d(
-                    TMDB_DEBUG_TAG,
-                    "cleanTitle='$cleanTitle', " +
-                            "matched=${
-                                bestMatch?.title
-                                    ?: bestMatch?.name
-                                    ?: "TIDAK ADA"
-                            }"
-                )
-
-                _tmdbMetadata.postValue(
-                    bestMatch
-                )
-
-            } catch (e: Exception) {
-
-                Log.e(
-                    TMDB_DEBUG_TAG,
-                    "TMDb fetch failed",
-                    e
-                )
-
-                _tmdbMetadata.postValue(
-                    null
-                )
             }
         }
     }
