@@ -69,9 +69,9 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var storage: StorageManager
 
     private var movieId: Int = 0
-    private var animeTitle: String = ""
+    private var mediaTitle: String = ""
     private var episodeName: String = ""
-    private var animePoster: String = ""
+    private var mediaPoster: String = ""
     private var currentSid: Int = 1
     private var currentNid: Int = 1
     private var currentPlayUrl: String = ""
@@ -239,9 +239,9 @@ class PlayerActivity : AppCompatActivity() {
             .coerceAtLeast((16 * resources.displayMetrics.density).toInt())
 
         movieId = intent.getIntExtra("MEDIA_ID", 0)
-        animeTitle = intent.getStringExtra("MEDIA_TITLE") ?: ""
+        mediaTitle = intent.getStringExtra("MEDIA_TITLE") ?: ""
         episodeName = intent.getStringExtra("EPISODE_NAME") ?: ""
-        animePoster = intent.getStringExtra("MEDIA_POSTER") ?: ""
+        mediaPoster = intent.getStringExtra("MEDIA_POSTER") ?: ""
         currentSid = intent.getIntExtra("SID", 1)
         currentNid = intent.getIntExtra("NID", 1)
         currentPlayUrl = intent.getStringExtra("PLAY_URL") ?: intent.getStringExtra("MEDIA_URL") ?: ""
@@ -256,7 +256,7 @@ class PlayerActivity : AppCompatActivity() {
                 ?: 0L
         }
 
-        tvPlayerTitle?.text = if (episodeName.isNotEmpty()) "$animeTitle - $episodeName" else animeTitle
+        tvPlayerTitle?.text = if (episodeName.isNotEmpty()) "$mediaTitle - $episodeName" else mediaTitle
         btnPlayerBack?.setOnClickListener { finish() }
 
         setupPlayerControls()
@@ -831,7 +831,7 @@ class PlayerActivity : AppCompatActivity() {
                     sid = currentSid,
                     nid = currentNid,
                     fallbackUrl = playUrl,
-                    title = animeTitle
+                    title = mediaTitle
                 )
                 binding.playerProgressBar.isVisible = false
                 currentRawEmbedUrl = stream.embedUrl
@@ -860,8 +860,8 @@ class PlayerActivity : AppCompatActivity() {
         val referer = when {
             m3u8Url.contains("playcdn.de") -> "https://playcdn.de/"
             m3u8Url.contains("videonode.de") -> "https://videonode.de/"
-            m3u8Url.contains("lk21") -> "https://tv12.lk21official.cc/"
-            m3u8Url.contains("nontondrama") -> "https://tv9.nontondrama.my/"
+            m3u8Url.contains("lk21") -> "${com.penonton.data.parser.Lk21Parser.activeMovieBase}/"
+            m3u8Url.contains("nontondrama") -> "${com.penonton.data.parser.Lk21Parser.activeSeriesBase}/"
             m3u8Url.contains("rumble.com") -> "https://rumble.com/"
             m3u8Url.contains("cdn.rumble.cloud") -> "https://rumble.com/"
             m3u8Url.contains("doubanio.com") -> "https://movie.douban.com/"
@@ -976,8 +976,8 @@ class PlayerActivity : AppCompatActivity() {
                 if (posMs > 1000L) {
                     storage.saveHistory(
                         movieId = movieId,
-                        title = animeTitle,
-                        poster = animePoster,
+                        title = mediaTitle,
+                        poster = mediaPoster,
                         episodeName = episodeName,
                         sid = currentSid,
                         nid = currentNid,
@@ -1054,9 +1054,9 @@ class PlayerActivity : AppCompatActivity() {
         } catch (_: Exception) { "" }
 
         val baseUrl = if (currentPlayUrl.contains("nontondrama") || embedUrl.contains("nontondrama")) {
-            "https://tv9.nontondrama.my/"
+            "${com.penonton.data.parser.Lk21Parser.activeSeriesBase}/"
         } else {
-            "https://tv12.lk21official.cc/"
+            "${com.penonton.data.parser.Lk21Parser.activeMovieBase}/"
         }
 
         val htmlContent = if (embedUrl.contains(".m3u8")) {
@@ -1153,8 +1153,8 @@ class PlayerActivity : AppCompatActivity() {
             if (pos > 1000L) {
                 storage.saveHistory(
                     movieId = movieId,
-                    title = animeTitle,
-                    poster = animePoster,
+                    title = mediaTitle,
+                    poster = mediaPoster,
                     episodeName = episodeName,
                     sid = currentSid,
                     nid = currentNid,

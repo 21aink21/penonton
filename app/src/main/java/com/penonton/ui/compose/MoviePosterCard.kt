@@ -24,7 +24,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
 /**
- * Komponen Poster Anime Jetpack Compose dengan Palette API & Custom coloredShadow Modifier
+ * Komponen Poster Film & Series Jetpack Compose dengan Palette API & Custom coloredShadow Modifier
  */
 @Composable
 fun MoviePosterCard(
@@ -60,13 +60,13 @@ fun MoviePosterCard(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E162A))
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Gambar Poster Anime via AsyncImage Coil
+            // Gambar Poster Film / Series via AsyncImage Coil
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(posterUrl)
                     .crossfade(true)
                     .build(),
-                contentDescription = title.ifEmpty { "Anime Poster" },
+                contentDescription = title.ifEmpty { "Movie Poster" },
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )

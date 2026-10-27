@@ -26,7 +26,7 @@ import com.penonton.util.CountryUtils
 import com.penonton.util.loadPoster
 
 class HomeAdapter(
-    private val onAnimeClick: (MovieItem) -> Unit,
+    private val onMovieClick: (MovieItem) -> Unit,
     private val onBannerClick: (MovieItem) -> Unit,
     private val onBannerSelected: (String) -> Unit = {},
     private val defaultHeaderTitle: String = "Rilis Terbaru"
@@ -37,6 +37,8 @@ class HomeAdapter(
         const val TYPE_HISTORY_HEADER = 1
         const val TYPE_CONTINUE = 2
         const val TYPE_HEADER = 3
+        const val TYPE_MOVIE = 4
+        @Deprecated("Gunakan TYPE_MOVIE", ReplaceWith("TYPE_MOVIE"))
         const val TYPE_ANIME = 4
         const val TYPE_LOADING = 5
     }
@@ -53,20 +55,22 @@ class HomeAdapter(
     @SuppressLint("NotifyDataSetChanged")
     fun setData(
         newBanners: List<MovieItem>,
-        newAnime: List<MovieItem>,
+        newMovies: List<MovieItem>,
         history: List<WatchHistoryItem> = emptyList(),
         customTitle: String? = null
     ) {
         isSearching = false
         headerTitle = customTitle ?: defaultHeaderTitle
         banners.clear(); banners.addAll(newBanners)
-        movieList.clear(); movieList.addAll(newAnime)
+        movieList.clear(); movieList.addAll(newMovies)
         continueWatching.clear(); continueWatching.addAll(history.take(10))
         isLoadingMore = false
         notifyDataSetChanged()
     }
 
-    fun appendAnime(newItems: List<MovieItem>) {
+    fun appendAnime(newItems: List<MovieItem>) = appendMovies(newItems)
+
+    fun appendMovies(newItems: List<MovieItem>) {
         if (newItems.isEmpty()) return
         val startPos = itemCount - if (isLoadingMore) 1 else 0
         movieList.addAll(newItems)
@@ -122,7 +126,7 @@ class HomeAdapter(
             histHeaderPos() -> TYPE_HISTORY_HEADER
             continuePos() -> TYPE_CONTINUE
             animeHeaderPos() -> TYPE_HEADER
-            else -> TYPE_ANIME
+            else -> TYPE_MOVIE
         }
     }
 
@@ -348,7 +352,7 @@ class HomeAdapter(
             }
 
             binding.ivPoster.loadPoster(item.poster)
-            binding.root.setOnClickListener { onAnimeClick(item) }
+            binding.root.setOnClickListener { onMovieClick(item) }
         }
     }
 

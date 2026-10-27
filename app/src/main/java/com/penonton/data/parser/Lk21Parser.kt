@@ -21,8 +21,33 @@ import java.util.regex.Pattern
 
 object Lk21Parser {
 
-    const val MOVIE_BASE = "https://tv12.lk21official.cc"
-    const val SERIES_BASE = "https://tv9.nontondrama.my"
+    const val DEFAULT_MOVIE_BASE = "https://tv12.lk21official.cc"
+    const val DEFAULT_SERIES_BASE = "https://tv.nontondrama.vip"
+
+    const val MOVIE_BASE = DEFAULT_MOVIE_BASE
+    const val SERIES_BASE = DEFAULT_SERIES_BASE
+
+    val MOVIE_MIRRORS = listOf(
+        "https://tv12.lk21official.cc",
+        "https://tv14.lk21official.cc",
+        "https://lk21official.cc"
+    )
+
+    val SERIES_MIRRORS = listOf(
+        "https://tv.nontondrama.vip",
+        "https://tv9.nontondrama.my",
+        "https://tv10.nontondrama.my"
+    )
+
+    @Volatile
+    var activeMovieBase: String = MOVIE_MIRRORS[0]
+
+    @Volatile
+    var activeSeriesBase: String = SERIES_MIRRORS[0]
+
+    fun getMovieMirrors(): List<String> = listOf(activeMovieBase) + (MOVIE_MIRRORS.filter { it != activeMovieBase })
+    fun getSeriesMirrors(): List<String> = listOf(activeSeriesBase) + (SERIES_MIRRORS.filter { it != activeSeriesBase })
+
     private const val SEARCH_API = "https://gudangvape.com/search.php"
     private const val POSTER_BASE = "https://poster.assetsy.de/wp-content/uploads/"
     private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -57,6 +82,28 @@ object Lk21Parser {
             if (!response.isSuccessful) throw Exception("HTTP Error ${response.code} on $url")
             response.body?.string() ?: ""
         }
+    }
+
+    suspend fun fetchHtmlWithMirrorFallback(
+        mirrors: List<String>,
+        path: String,
+        referer: String? = null,
+        onMirrorSelected: ((String) -> Unit)? = null
+    ): Pair<String, String> = withContext(Dispatchers.IO) {
+        var lastException: Exception? = null
+        for (mirror in mirrors) {
+            val fullUrl = if (path.startsWith("http")) path else "${mirror.trimEnd('/')}/${path.trimStart('/')}"
+            try {
+                val html = fetchHtml(fullUrl, referer)
+                if (html.isNotBlank()) {
+                    onMirrorSelected?.invoke(mirror)
+                    return@withContext Pair(mirror, html)
+                }
+            } catch (e: Exception) {
+                lastException = e
+            }
+        }
+        throw lastException ?: Exception("Gagal memuat data dari semua mirror")
     }
 
     private fun parseCard(article: Element, baseUrl: String, explicitCountry: String = ""): MovieItem? {
@@ -128,7 +175,7 @@ object Lk21Parser {
         val req = Request.Builder()
             .url(url)
             .header("User-Agent", USER_AGENT)
-            .header("Referer", "$MOVIE_BASE/")
+            .header("Referer", "$activeMovieBase/")
             .build()
 
         val items = mutableListOf<MovieItem>()
@@ -153,7 +200,7 @@ object Lk21Parser {
                         posterRel.isNotEmpty() -> "$POSTER_BASE$posterRel"
                         else -> ""
                     }
-                    val baseUrl = if (type == "series") SERIES_BASE else MOVIE_BASE
+                    val baseUrl = if (type == "series") activeSeriesBase else activeMovieBase
                     val fullUrl = "$baseUrl/$slug"
                     val id = slug.hashCode()
                     idToUrlMap[id] = fullUrl
@@ -190,13 +237,13 @@ object Lk21Parser {
             return@withContext cachedLatest!!.second
         }
 
-        val url = "$MOVIE_BASE/latest/page/$page"
-        val html = fetchHtml(url)
+        val (base, html) = fetchHtmlWithMirrorFallback(getMovieMirrors(), "/latest/page/$page") { activeMovieBase = it }
+
         val doc = Jsoup.parse(html)
         val items = mutableListOf<MovieItem>()
 
         for (card in doc.select("article")) {
-            parseCard(card, MOVIE_BASE)?.let { items.add(it) }
+            parseCard(card, base)?.let { items.add(it) }
         }
 
         if (page == 1 && items.isNotEmpty()) {
@@ -216,13 +263,13 @@ object Lk21Parser {
             return@withContext cachedLatestSeries!!.second
         }
 
-        val url = "$SERIES_BASE/latest-series/page/$page"
-        val html = fetchHtml(url)
+        val (base, html) = fetchHtmlWithMirrorFallback(getSeriesMirrors(), "/latest-series/page/$page") { activeSeriesBase = it }
+
         val doc = Jsoup.parse(html)
         val items = mutableListOf<MovieItem>()
 
         for (card in doc.select("article")) {
-            parseCard(card, SERIES_BASE)?.let { items.add(it) }
+            parseCard(card, base)?.let { items.add(it) }
         }
 
         if (page == 1 && items.isNotEmpty()) {
@@ -240,13 +287,13 @@ object Lk21Parser {
             if (!forceRefresh && cachedRankings != null && (now - cachedRankings!!.first) < CACHE_EXPIRY_MS) {
                 return@withContext cachedRankings!!.second
             }
-            val url = "$MOVIE_BASE/populer/page/1"
-            val html = fetchHtml(url)
+            val (base, html) = fetchHtmlWithMirrorFallback(getMovieMirrors(), "/populer/page/1") { activeMovieBase = it }
+    
             val doc = Jsoup.parse(html)
             val items = mutableListOf<MovieItem>()
 
             for (card in doc.select("article")) {
-                parseCard(card, MOVIE_BASE)?.let { items.add(it) }
+                parseCard(card, base)?.let { items.add(it) }
             }
 
             if (items.isNotEmpty()) {
@@ -258,25 +305,19 @@ object Lk21Parser {
             if (!forceRefresh && cachedSeriesRankings != null && (now - cachedSeriesRankings!!.first) < CACHE_EXPIRY_MS) {
                 return@withContext cachedSeriesRankings!!.second
             }
-            val url = "$SERIES_BASE/top-series-today/page/1"
-            val html = fetchHtml(url)
+            val (base, html) = fetchHtmlWithMirrorFallback(getSeriesMirrors(), "/top-series-today/page/1") { activeSeriesBase = it }
+    
             val doc = Jsoup.parse(html)
             val items = mutableListOf<MovieItem>()
 
             for (card in doc.select("article")) {
-                parseCard(card, SERIES_BASE)?.let { items.add(it) }
+                parseCard(card, base)?.let { items.add(it) }
             }
 
             if (items.isNotEmpty()) {
                 cachedSeriesRankings = Pair(now, items)
             }
             items
-        }
-    }
-
-    fun registerUrl(id: Int, url: String) {
-        if (url.isNotEmpty()) {
-            idToUrlMap[id] = url
         }
     }
 
@@ -294,13 +335,30 @@ object Lk21Parser {
 
         var pageUrl = fallbackUrl?.takeIf { it.isNotEmpty() } ?: idToUrlMap[itemId] ?: ""
         if (pageUrl.isEmpty()) {
-            pageUrl = "$MOVIE_BASE/"
+            pageUrl = "$activeMovieBase/"
         }
         if (pageUrl.startsWith("/")) {
-            pageUrl = if (pageUrl.contains("series") || pageUrl.contains("season") || pageUrl.contains("episode")) "$SERIES_BASE$pageUrl" else "$MOVIE_BASE$pageUrl"
+            pageUrl = if (pageUrl.contains("series") || pageUrl.contains("season") || pageUrl.contains("episode")) "$activeSeriesBase$pageUrl" else "$activeMovieBase$pageUrl"
         }
 
-        val html = fetchHtml(pageUrl)
+        val html = try {
+            fetchHtml(pageUrl)
+        } catch (e: Exception) {
+            val mirrors = if (pageUrl.contains("nontondrama") || pageUrl.contains("series")) getSeriesMirrors() else getMovieMirrors()
+            var fallbackHtml: String? = null
+            for (m in mirrors) {
+                try {
+                    val replacedUrl = pageUrl.replace(Regex("^https?://[^/]+"), m)
+                    val res = fetchHtml(replacedUrl)
+                    if (res.isNotBlank()) {
+                        pageUrl = replacedUrl
+                        fallbackHtml = res
+                        break
+                    }
+                } catch (_: Exception) {}
+            }
+            fallbackHtml ?: throw e
+        }
         val doc = Jsoup.parse(html)
         val isSeries = pageUrl.contains("nontondrama") || doc.selectFirst("script#season-data") != null || doc.selectFirst("a[href*=-episode-]") != null
 
@@ -519,7 +577,7 @@ object Lk21Parser {
             throw Exception("URL video tidak ditemukan")
         }
         if (playUrl.startsWith("/")) {
-            playUrl = if (playUrl.contains("episode") || playUrl.contains("season")) "$SERIES_BASE$playUrl" else "$MOVIE_BASE$playUrl"
+            playUrl = if (playUrl.contains("episode") || playUrl.contains("season")) "$activeSeriesBase$playUrl" else "$activeMovieBase$playUrl"
         }
 
         val htmlPage = fetchHtml(playUrl)

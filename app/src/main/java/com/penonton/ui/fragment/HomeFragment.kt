@@ -59,7 +59,7 @@ class HomeFragment : Fragment() {
 
     private fun setupRecyclerView() {
         homeAdapter = HomeAdapter(
-            onAnimeClick = { openDetail(it) },
+            onMovieClick = { openDetail(it) },
             onBannerClick = { openDetail(it) },
             onBannerSelected = { (activity as? com.penonton.ui.activity.MainActivity)?.updateAmbientBackdrop(it) },
             defaultHeaderTitle = "Film & Movie Terbaru"
@@ -100,12 +100,12 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun openDetail(anime: MovieItem) {
+    private fun openDetail(movie: MovieItem) {
         startActivity(Intent(requireContext(), DetailActivity::class.java).apply {
-            putExtra("MEDIA_ID", anime.id)
-            putExtra("MEDIA_TITLE", anime.title)
-            putExtra("MEDIA_POSTER", anime.poster)
-            putExtra("MEDIA_URL", anime.url)
+            putExtra("MEDIA_ID", movie.id)
+            putExtra("MEDIA_TITLE", movie.title)
+            putExtra("MEDIA_POSTER", movie.poster)
+            putExtra("MEDIA_URL", movie.url)
         })
     }
 
@@ -174,7 +174,7 @@ class HomeFragment : Fragment() {
                 } else {
                     currentPage = nextPage
                     homeAdapter.setLoadingMore(false)
-                    homeAdapter.appendAnime(items)
+                    homeAdapter.appendMovies(items)
                 }
             } catch (e: Exception) {
                 Log.e("HomeFragment", "Load more error", e)

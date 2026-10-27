@@ -13,7 +13,7 @@ import com.penonton.ui.dialog.BubbleSizeBottomSheet
 import com.penonton.ui.fragment.HomeFragment
 import com.penonton.ui.fragment.LibraryFragment
 import com.penonton.ui.fragment.RankingFragment
-import com.penonton.ui.fragment.ScheduleFragment
+import com.penonton.ui.fragment.SeriesFragment
 import com.penonton.util.loadPoster
 import androidx.core.graphics.toColorInt
 import androidx.core.view.isVisible
@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    private val seriesFragment by lazy { ScheduleFragment() }
+    private val seriesFragment by lazy { SeriesFragment() }
     private val moviesFragment by lazy { HomeFragment() }
     private val rankingFragment by lazy { RankingFragment() }
     private val libraryFragment by lazy { LibraryFragment() }

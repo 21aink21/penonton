@@ -2,16 +2,67 @@ package com.penonton.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.penonton.data.model.MovieItem
-import com.penonton.data.model.WatchHistoryItem
+import androidx.core.content.edit
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import androidx.core.content.edit
+import com.penonton.data.local.db.PenontonDatabaseHelper
+import com.penonton.data.model.MovieItem
+import com.penonton.data.model.WatchHistoryItem
 
 class StorageManager(context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences("penonton_prefs", Context.MODE_PRIVATE)
-    private val gson = Gson()
+    private val dbHelper = PenontonDatabaseHelper.getInstance(context)
+
+    init {
+        migrateLegacyDataIfNecessary()
+    }
+
+    private fun migrateLegacyDataIfNecessary() {
+        val migrated = prefs.getBoolean(KEY_DB_MIGRATED, false)
+        if (migrated) return
+
+        try {
+            val gson = Gson()
+
+            // 1. Migrate Watch History
+            val historyJson = prefs.getString(KEY_HISTORY, null)
+            if (!historyJson.isNullOrBlank()) {
+                val histType = object : TypeToken<List<WatchHistoryItem>>() {}.type
+                val legacyHistory: List<WatchHistoryItem>? = gson.fromJson(historyJson, histType)
+                legacyHistory?.reversed()?.forEach { item ->
+                    dbHelper.saveHistory(
+                        movieId = item.movieId,
+                        title = item.title,
+                        poster = item.poster,
+                        episodeName = item.episodeName,
+                        sid = item.sid,
+                        nid = item.nid,
+                        positionMs = item.positionMs,
+                        durationMs = item.durationMs,
+                        playUrl = item.playUrl,
+                        movieUrl = item.movieUrl
+                    )
+                }
+            }
+
+            // 2. Migrate Favorites
+            val favJson = prefs.getString(KEY_FAVORITES, null)
+            if (!favJson.isNullOrBlank()) {
+                val favType = object : TypeToken<List<MovieItem>>() {}.type
+                val legacyFavs: List<MovieItem>? = gson.fromJson(favJson, favType)
+                legacyFavs?.reversed()?.forEach { movie ->
+                    if (!dbHelper.isFavorite(movie.id)) {
+                        dbHelper.toggleFavorite(movie)
+                    }
+                }
+            }
+
+            prefs.edit { putBoolean(KEY_DB_MIGRATED, true) }
+        } catch (_: Exception) {
+            // Non-critical: fail silently if legacy data format is corrupted
+        }
+    }
 
     // ==========================================
     // 1. Watch History & Resume Progress
@@ -29,22 +80,16 @@ class StorageManager(context: Context) {
         playUrl: String = "",
         movieUrl: String = ""
     ) {
-        val list = getHistory().toMutableList()
-        val oldItem = list.firstOrNull { it.movieId == movieId }
-        list.removeAll { it.movieId == movieId }
-
+        val oldDuration = getEpisodeDuration(movieId, nid)
         val finalDuration = if (durationMs > 0L) {
             durationMs
+        } else if (oldDuration > 0L) {
+            oldDuration
         } else {
-            oldItem?.takeIf { it.durationMs > 0L }?.durationMs
-                ?: getEpisodeDuration(movieId, nid).takeIf { it > 0L }
-                ?: 0L
+            0L
         }
 
-        val finalPlayUrl = playUrl.ifEmpty { (oldItem?.playUrl ?: "") }
-        val finalMovieUrl = movieUrl.ifEmpty { (oldItem?.movieUrl ?: "") }
-
-        val item = WatchHistoryItem(
+        dbHelper.saveHistory(
             movieId = movieId,
             title = title,
             poster = poster,
@@ -53,47 +98,29 @@ class StorageManager(context: Context) {
             nid = nid,
             positionMs = positionMs,
             durationMs = finalDuration,
-            timestamp = System.currentTimeMillis(),
-            playUrl = finalPlayUrl,
-            movieUrl = finalMovieUrl
+            playUrl = playUrl,
+            movieUrl = movieUrl
         )
-        list.add(0, item) // Add to top
-        if (list.size > 50) list.removeAt(list.size - 1) // Keep latest 50
-
-        prefs.edit {
-            putString(KEY_HISTORY, gson.toJson(list))
-                .putLong("ep_pos_${movieId}_$nid", positionMs)
-                .putLong("ep_dur_${movieId}_$nid", finalDuration)
-        }
-
-        // Also mark episode as watched
-        markEpisodeWatched(movieId, episodeName)
     }
 
     fun getEpisodePosition(movieId: Int, nid: Int): Long {
-        return prefs.getLong("ep_pos_${movieId}_$nid", 0L)
+        return dbHelper.getEpisodePosition(movieId, nid)
     }
 
     fun getEpisodeDuration(movieId: Int, nid: Int): Long {
-        return prefs.getLong("ep_dur_${movieId}_$nid", 0L)
+        return dbHelper.getEpisodeDuration(movieId, nid)
     }
 
     fun getHistory(): List<WatchHistoryItem> {
-        val json = prefs.getString(KEY_HISTORY, null) ?: return emptyList()
-        return try {
-            val type = object : TypeToken<List<WatchHistoryItem>>() {}.type
-            gson.fromJson(json, type) ?: emptyList()
-        } catch (_: Exception) {
-            emptyList()
-        }
+        return dbHelper.getHistory()
     }
 
     fun getLastWatched(movieId: Int): WatchHistoryItem? {
-        return getHistory().firstOrNull { it.movieId == movieId }
+        return dbHelper.getLastWatched(movieId)
     }
 
     fun clearHistory() {
-        prefs.edit { remove(KEY_HISTORY) }
+        dbHelper.clearHistory()
     }
 
     // ==========================================
@@ -101,46 +128,32 @@ class StorageManager(context: Context) {
     // ==========================================
 
     fun markEpisodeWatched(movieId: Int, episodeName: String) {
-        val key = "${KEY_WATCHED_EPS}_$movieId"
-        val set = prefs.getStringSet(key, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        set.add(episodeName)
-        prefs.edit { putStringSet(key, set) }
+        dbHelper.markEpisodeWatched(movieId, episodeName)
     }
 
     fun getWatchedEpisodes(movieId: Int): Set<String> {
-        val key = "${KEY_WATCHED_EPS}_$movieId"
-        return prefs.getStringSet(key, emptySet()) ?: emptySet()
+        return dbHelper.getWatchedEpisodes(movieId)
     }
 
     // ==========================================
     // 3. Favorites / Bookmarks
     // ==========================================
 
-    fun toggleFavorite(anime: MovieItem): Boolean {
-        val list = getFavorites().toMutableList()
-        val exists = list.any { it.id == anime.id }
-        if (exists) {
-            list.removeAll { it.id == anime.id }
-        } else {
-            list.add(0, anime)
-        }
-        prefs.edit { putString(KEY_FAVORITES, gson.toJson(list)) }
-        return !exists // Returns true if added, false if removed
+    fun toggleFavorite(movie: MovieItem): Boolean {
+        return dbHelper.toggleFavorite(movie)
     }
 
     fun isFavorite(movieId: Int): Boolean {
-        return getFavorites().any { it.id == movieId }
+        return dbHelper.isFavorite(movieId)
     }
 
     fun getFavorites(): List<MovieItem> {
-        val json = prefs.getString(KEY_FAVORITES, null) ?: return emptyList()
-        return try {
-            val type = object : TypeToken<List<MovieItem>>() {}.type
-            gson.fromJson(json, type) ?: emptyList()
-        } catch (_: Exception) {
-            emptyList()
-        }
+        return dbHelper.getFavorites()
     }
+
+    // ==========================================
+    // 4. UI Preferences
+    // ==========================================
 
     fun getBubbleSize(): Int {
         return prefs.getInt(KEY_BUBBLE_SIZE, 60)
@@ -154,7 +167,7 @@ class StorageManager(context: Context) {
         private const val KEY_BUBBLE_SIZE = "key_bubble_size"
         private const val KEY_HISTORY = "key_watch_history"
         private const val KEY_FAVORITES = "key_favorites"
-        private const val KEY_WATCHED_EPS = "key_watched_eps"
+        private const val KEY_DB_MIGRATED = "key_db_migrated_v1"
 
         @Volatile
         private var instance: StorageManager? = null

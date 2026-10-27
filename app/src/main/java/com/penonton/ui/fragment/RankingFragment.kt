@@ -36,12 +36,12 @@ class RankingFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        rankingAdapter = RankingAdapter { anime ->
+        rankingAdapter = RankingAdapter { movie ->
             val intent = Intent(requireContext(), DetailActivity::class.java).apply {
-                putExtra("MEDIA_ID", anime.id)
-                putExtra("MEDIA_TITLE", anime.title)
-                putExtra("MEDIA_POSTER", anime.poster)
-                putExtra("MEDIA_URL", anime.url)
+                putExtra("MEDIA_ID", movie.id)
+                putExtra("MEDIA_TITLE", movie.title)
+                putExtra("MEDIA_POSTER", movie.poster)
+                putExtra("MEDIA_URL", movie.url)
             }
             startActivity(intent)
         }
